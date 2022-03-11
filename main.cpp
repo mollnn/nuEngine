@@ -9,6 +9,7 @@
 
 bool key_status[512];
 float mouse_x, mouse_y;
+bool mouse_button_status[3];
 
 void framesizeCallback(GLFWwindow *window, int width, int height)
 {
@@ -27,10 +28,49 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mode
     }
 }
 
-void mouseCallback(GLFWwindow *window, double mx, double my)
+void cursorCallback(GLFWwindow *window, double mx, double my)
 {
     mouse_x = mx;
     mouse_y = my;
+}
+
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
+{
+    if (action == GLFW_PRESS)
+    {
+        switch (button)
+        {
+        case GLFW_MOUSE_BUTTON_LEFT:
+            mouse_button_status[0] = 1;
+            break;
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            mouse_button_status[1] = 1;
+            break;
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            mouse_button_status[2] = 1;
+            break;
+        default:
+            return;
+        }
+    }
+    if (action == GLFW_RELEASE)
+    {
+        switch (button)
+        {
+        case GLFW_MOUSE_BUTTON_LEFT:
+            mouse_button_status[0] = 0;
+            break;
+        case GLFW_MOUSE_BUTTON_MIDDLE:
+            mouse_button_status[1] = 0;
+            break;
+        case GLFW_MOUSE_BUTTON_RIGHT:
+            mouse_button_status[2] = 0;
+            break;
+        default:
+            return;
+        }
+    }
+    return;
 }
 
 GLuint loadShader(const std::string &vs_name, const std::string &fs_name)
@@ -91,6 +131,36 @@ GLuint loadShader(const std::string &vs_name, const std::string &fs_name)
     return sp;
 }
 
+class Shader
+{
+    int sp_;
+
+public:
+    Shader(const std::string &vs_name, const std::string &fs_name)
+    {
+        sp_ = loadShader(vs_name, fs_name);
+    }
+
+    void use()
+    {
+        glUseProgram(sp_);
+    }
+
+    void setUniform(const std::string &name, int x)
+    {
+        glUniform1i(glGetUniformLocation(sp_, name.c_str()), x);
+    }
+
+    void setUniform(const std::string &name, float x, float y, float z)
+    {
+        glUniform3f(glGetUniformLocation(sp_, name.c_str()), x, y, z);
+    }
+    void setUniform(const std::string &name, const glm::mat4 &value)
+    {
+        glUniformMatrix4fv(glGetUniformLocation(sp_, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
+    }
+};
+
 GLuint loadTexture(const std::string &tex_name)
 {
     int sx, sy;
@@ -108,6 +178,23 @@ GLuint loadTexture(const std::string &tex_name)
 
     return tex;
 }
+
+class Texture
+{
+    int handle_;
+
+public:
+    Texture(const std::string &tex_name)
+    {
+        handle_ = loadTexture(tex_name);
+    }
+
+    void use(int unit_id)
+    {
+        glActiveTexture(unit_id);
+        glBindTexture(GL_TEXTURE0 + unit_id, handle_);
+    }
+};
 
 int main()
 {
@@ -129,7 +216,8 @@ int main()
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framesizeCallback);
     glfwSetKeyCallback(window, keyCallback);
-    glfwSetCursorPosCallback(window, mouseCallback);
+    glfwSetCursorPosCallback(window, cursorCallback);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
@@ -150,8 +238,8 @@ int main()
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(6 * sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
 
-    GLuint shader = loadShader("../shader.vs", "../shader.fs");
-    GLuint tex = loadTexture("tex1.jpg");
+    Shader shader("../shader.vs", "../shader.fs");
+    Texture texture("tex1.jpg");
 
     glm::vec3 cam_pos(0.0, 0.5, 1.0);
     glm::vec3 cam_dir(0.0, 0.0, -1.0);
@@ -159,14 +247,34 @@ int main()
 
     float pitch = 0.0f, yaw = 0.0f;
 
-    GLfloat cam_speed = 0.001f;
+    GLfloat cam_speed = 0.5f;
+    GLfloat cam_rotate_speed = 1.0f;
+
+    GLfloat last_frame_time = glfwGetTime();
+    GLfloat last_cursor_x = mouse_x, last_cursor_y = mouse_y;
 
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
 
-        pitch = -89.0f * (mouse_y - 200) / 200;
-        yaw = 360.0f * 2 * mouse_x / 400;
+        GLfloat current_time = glfwGetTime();
+
+        GLfloat delta_cursor_x = mouse_x - last_cursor_x;
+        GLfloat delta_cursor_y = mouse_y - last_cursor_y;
+
+        last_cursor_x = mouse_x;
+        last_cursor_y = mouse_y;
+
+        if (key_status[GLFW_KEY_LEFT_ALT] && mouse_button_status[0])
+        {
+            pitch += -89.0f * delta_cursor_y * cam_rotate_speed / 400;
+            yaw += 360.0f * delta_cursor_x * cam_rotate_speed / 400;
+
+            if (pitch > 89.0f)
+                pitch = 89.0f;
+            if (pitch < -89.0f)
+                pitch = -89.0f;
+        }
 
         cam_dir.x = glm::cos(glm::radians(pitch)) * glm::cos(glm::radians(yaw));
         cam_dir.y = glm::sin(glm::radians(pitch));
@@ -179,31 +287,27 @@ int main()
 
         if (key_status[GLFW_KEY_UP])
         {
-            cam_pos += cam_dir * cam_speed;
+            cam_pos += cam_dir * cam_speed * (current_time - last_frame_time);
         }
         if (key_status[GLFW_KEY_DOWN])
         {
-            cam_pos -= cam_dir * cam_speed;
+            cam_pos -= cam_dir * cam_speed * (current_time - last_frame_time);
         }
         if (key_status[GLFW_KEY_LEFT])
         {
-            cam_pos -= cam_hand * cam_speed;
+            cam_pos -= cam_hand * cam_speed * (current_time - last_frame_time);
         }
         if (key_status[GLFW_KEY_RIGHT])
         {
-            cam_pos += cam_hand * cam_speed;
+            cam_pos += cam_hand * cam_speed * (current_time - last_frame_time);
         }
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shader);
-
-        glActiveTexture(0);
-        glBindTexture(GL_TEXTURE0, tex);
-        glUniform1i(glGetUniformLocation(shader, "tex"), 0);
-        glUniform3f(glGetUniformLocation(shader, "light_int"), 1.0f, 0.0f, 0.0f);
-        glUniform3f(glGetUniformLocation(shader, "light_pos"), 0.0f, 1.0f, 0.0f);
+        shader.use();
+        texture.use(0);
+        shader.setUniform("tex", 0);
 
         glm::mat4 model(1.0);
         model = glm::translate(model, glm::vec3(-0.1, 0.0, 0.0));
@@ -215,14 +319,24 @@ int main()
         glm::mat4 projection(1.0);
         projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
 
-        glUniformMatrix4fv(glGetUniformLocation(shader, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        glUniformMatrix4fv(glGetUniformLocation(shader, "view"), 1, GL_FALSE, glm::value_ptr(view));
-        glUniformMatrix4fv(glGetUniformLocation(shader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+        shader.setUniform("n_point_light", 3);
+        shader.setUniform("point_light[0].val", 0.1f, 0.1f, 0.1f);
+        shader.setUniform("point_light[0].pos", 0.5f, 0.3f, 0.0f);
+        shader.setUniform("point_light[1].val", 0.001f, 0.0f, 0.0f);
+        shader.setUniform("point_light[1].pos", 0.0f, 0.01f, 0.0f);
+        shader.setUniform("point_light[2].val", 1500000.0f, 1300000.0f, 1000000.0f);
+        shader.setUniform("point_light[2].pos", 0.0f, 1000.0f, 0.0f);
+
+        shader.setUniform("model", model);
+        shader.setUniform("view", view);
+        shader.setUniform("projection", projection);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
         glfwSwapBuffers(window);
+
+        last_frame_time = current_time;
     }
 
     glfwTerminate();
