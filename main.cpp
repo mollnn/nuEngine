@@ -196,6 +196,37 @@ public:
     }
 };
 
+class Mesh
+{
+    GLuint vao_;
+    GLuint vbo_;
+    int n_;
+
+public:
+    Mesh(const std::vector<GLfloat> &vertices)
+    {
+        n_ = vertices.size();
+        glGenVertexArrays(1, &vao_);
+        glGenBuffers(1, &vbo_);
+        glBindVertexArray(vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(3 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(6 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(2);
+    }
+
+    void draw()
+    {
+        glBindVertexArray(vao_);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+        glDrawArrays(GL_TRIANGLES, 0, n_);
+    }
+};
+
 int main()
 {
     std::cout << "Nightup Engine v0.1" << std::endl;
@@ -224,20 +255,11 @@ int main()
     std::vector<GLfloat> vertices = {-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
                                      1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
                                      0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f};
-
-    GLuint vao, vbo;
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(6 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(2);
-
+    std::vector<GLfloat> vertices2 = {-0.5f, 0.1f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+                                      0.5f, 0.1f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+                                      0.0f, 0.1f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f};
+    Mesh mesh(vertices);
+    Mesh mesh2(vertices2);
     Shader shader("../shader.vs", "../shader.fs");
     Texture texture("tex1.jpg");
 
@@ -331,8 +353,8 @@ int main()
         shader.setUniform("view", view);
         shader.setUniform("projection", projection);
 
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+        mesh.draw();
+        mesh2.draw();
 
         glfwSwapBuffers(window);
 
