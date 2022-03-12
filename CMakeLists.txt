@@ -18,4 +18,5 @@ target_link_libraries(${PROJECT_NAME}
     -ldl
     -lXinerama
     -lXcursor
+    -lassimp
     )

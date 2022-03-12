@@ -7,6 +7,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 bool key_status[512];
 float mouse_x, mouse_y;
 bool mouse_button_status[3];
@@ -196,6 +200,51 @@ public:
     }
 };
 
+std::vector<GLfloat> pureLoadModel()
+{
+    std::vector<GLfloat> ans;
+    Assimp::Importer importer;
+    auto scene = importer.ReadFile("spot.obj", aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
+    {
+        std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
+        return {};
+    }
+    std::function<void(aiNode *, const aiScene *)> solve = [&](aiNode *node, const aiScene *scene)
+    {
+        for (int i = 0; i < node->mNumMeshes; i++)
+        {
+            aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
+            for (int j = 0; j < mesh->mNumVertices; j++)
+            {
+                ans.push_back(mesh->mVertices[j].x);
+                ans.push_back(mesh->mVertices[j].y);
+                ans.push_back(mesh->mVertices[j].z);
+                ans.push_back(mesh->mNormals[j].x);
+                ans.push_back(mesh->mNormals[j].y);
+                ans.push_back(mesh->mNormals[j].z);
+                if (mesh->mTextureCoords[0])
+                {
+                    ans.push_back(mesh->mTextureCoords[0][j].x);
+                    ans.push_back(mesh->mTextureCoords[0][j].y);
+                }
+                else
+                {
+                    ans.push_back(0);
+                    ans.push_back(0);
+                }
+            }
+        }
+        for (int i = 0; i < node->mNumChildren; i++)
+        {
+            aiNode* child = node->mChildren[i];
+            solve(child, scene);
+        }
+    };
+    solve(scene->mRootNode, scene);
+    return ans;
+}
+
 class Mesh
 {
     GLuint vao_;
@@ -252,12 +301,13 @@ int main()
 
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
+    glEnable(GL_DEPTH_TEST);
+
     std::vector<GLfloat> vertices = {-1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
                                      1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
                                      0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f};
-    std::vector<GLfloat> vertices2 = {-0.5f, 0.1f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-                                      0.5f, 0.1f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-                                      0.0f, 0.1f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 0.5f};
+    std::vector<GLfloat> vertices2 = pureLoadModel();
+    std::cout << vertices2.size() << std::endl;
     Mesh mesh(vertices);
     Mesh mesh2(vertices2);
     Shader shader("../shader.vs", "../shader.fs");
@@ -325,7 +375,7 @@ int main()
         }
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
         texture.use(0);
