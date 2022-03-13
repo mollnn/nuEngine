@@ -82,6 +82,96 @@ struct PointLight
     glm::vec3 position;
 };
 
+struct Camera
+{
+    glm::vec3 cam_pos;
+    glm::vec3 cam_dir;
+    glm::vec3 cam_up;
+
+    float pitch = 0.0f, yaw = 0.0f;
+
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 projection;
+
+    Camera()
+    {
+        cam_pos.x = 2;
+        onEvents();
+    }
+
+    void onEvents()
+    {
+        static GLfloat last_frame_time = glfwGetTime();
+        static GLfloat last_cursor_x = mouse_x, last_cursor_y = mouse_y;
+
+        GLfloat current_time = glfwGetTime();
+
+        GLfloat delta_cursor_x = mouse_x - last_cursor_x;
+        GLfloat delta_cursor_y = mouse_y - last_cursor_y;
+
+        last_cursor_x = mouse_x;
+        last_cursor_y = mouse_y;
+
+        GLfloat cam_speed = 0.5f;
+        GLfloat cam_pan_speed = 0.005f;
+        GLfloat cam_rotate_speed = 1.0f;
+
+        if (key_status[GLFW_KEY_LEFT_ALT] && mouse_button_status[0])
+        {
+            pitch += -89.0f * delta_cursor_y * cam_rotate_speed / 512;
+            yaw += 360.0f * delta_cursor_x * cam_rotate_speed / 512;
+
+            if (pitch > 89.0f)
+                pitch = 89.0f;
+            if (pitch < -89.0f)
+                pitch = -89.0f;
+        }
+
+        cam_dir.x = glm::cos(glm::radians(pitch)) * glm::cos(glm::radians(yaw));
+        cam_dir.y = glm::sin(glm::radians(pitch));
+        cam_dir.z = glm::cos(glm::radians(pitch)) * glm::sin(glm::radians(yaw));
+        cam_up = glm::vec3(0.0f, 1.0f, 0.0f);
+        glm::vec3 cam_hand = glm::cross(cam_dir, cam_up);
+        cam_up = glm::cross(cam_hand, cam_dir);
+        cam_up = glm::normalize(cam_up);
+        cam_hand = glm::cross(cam_dir, cam_up);
+
+        if (key_status[GLFW_KEY_LEFT_CONTROL] && mouse_button_status[0])
+        {
+            cam_pos += cam_hand * delta_cursor_x * cam_pan_speed;
+            cam_pos -= cam_up * delta_cursor_y * cam_pan_speed;
+        }
+
+        if (key_status[GLFW_KEY_LEFT_SHIFT] && mouse_button_status[0])
+        {
+            cam_pos += cam_hand * delta_cursor_x * cam_pan_speed;
+            cam_pos -= cam_dir * delta_cursor_y * cam_pan_speed;
+        }
+
+        if (key_status[GLFW_KEY_UP])
+        {
+            cam_pos += cam_dir * cam_speed * (current_time - last_frame_time);
+        }
+        if (key_status[GLFW_KEY_DOWN])
+        {
+            cam_pos -= cam_dir * cam_speed * (current_time - last_frame_time);
+        }
+        if (key_status[GLFW_KEY_LEFT])
+        {
+            cam_pos -= cam_hand * cam_speed * (current_time - last_frame_time);
+        }
+        if (key_status[GLFW_KEY_RIGHT])
+        {
+            cam_pos += cam_hand * cam_speed * (current_time - last_frame_time);
+        }
+        last_frame_time = current_time;
+
+        view = glm::lookAt(cam_pos, cam_pos + cam_dir, cam_up);
+        projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
+    }
+};
+
 class Shader
 {
     int sp_;
@@ -189,6 +279,18 @@ public:
             setUniform("point_light[" + std::to_string(i) + "].pos", light.position);
             setUniform("point_light[" + std::to_string(i) + "].val", light.intensity);
         }
+    }
+
+    void setMVP(const glm::mat4 &model, const glm::mat4 &view, const glm::mat4 &projection)
+    {
+        setUniform("model", model);
+        setUniform("view", view);
+        setUniform("projection", projection);
+    }
+
+    void setCamera(const Camera &camera)
+    {
+        setMVP(camera.model, camera.view, camera.projection);
     }
 
     GLuint id()
@@ -454,107 +556,23 @@ int main()
 
     Model m0("spot.obj");
     Shader shader("../shader.vs", "../shader.fs");
-
-    glm::vec3 cam_pos(0.0, 0.5, 1.0);
-    glm::vec3 cam_dir(0.0, 0.0, -1.0);
-    glm::vec3 cam_up(0.0, 1.0, 0.0);
-
-    float pitch = 0.0f, yaw = 0.0f;
-
-    GLfloat cam_speed = 0.5f;
-    GLfloat cam_pan_speed = 0.005f;
-    GLfloat cam_rotate_speed = 1.0f;
-
-    GLfloat last_frame_time = glfwGetTime();
-    GLfloat last_cursor_x = mouse_x, last_cursor_y = mouse_y;
+    Camera camera;
 
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-
-        GLfloat current_time = glfwGetTime();
-
-        GLfloat delta_cursor_x = mouse_x - last_cursor_x;
-        GLfloat delta_cursor_y = mouse_y - last_cursor_y;
-
-        last_cursor_x = mouse_x;
-        last_cursor_y = mouse_y;
-
-        if (key_status[GLFW_KEY_LEFT_ALT] && mouse_button_status[0])
-        {
-            pitch += -89.0f * delta_cursor_y * cam_rotate_speed / 512;
-            yaw += 360.0f * delta_cursor_x * cam_rotate_speed / 512;
-
-            if (pitch > 89.0f)
-                pitch = 89.0f;
-            if (pitch < -89.0f)
-                pitch = -89.0f;
-        }
-
-        cam_dir.x = glm::cos(glm::radians(pitch)) * glm::cos(glm::radians(yaw));
-        cam_dir.y = glm::sin(glm::radians(pitch));
-        cam_dir.z = glm::cos(glm::radians(pitch)) * glm::sin(glm::radians(yaw));
-        cam_up = glm::vec3(0.0f, 1.0f, 0.0f);
-        glm::vec3 cam_hand = glm::cross(cam_dir, cam_up);
-        cam_up = glm::cross(cam_hand, cam_dir);
-        cam_up = glm::normalize(cam_up);
-        cam_hand = glm::cross(cam_dir, cam_up);
-
-        if (key_status[GLFW_KEY_LEFT_CONTROL] && mouse_button_status[0])
-        {
-            cam_pos += cam_hand * delta_cursor_x * cam_pan_speed;
-            cam_pos -= cam_up * delta_cursor_y * cam_pan_speed;
-        }
-
-        if (key_status[GLFW_KEY_LEFT_SHIFT] && mouse_button_status[0])
-        {
-            cam_pos += cam_hand * delta_cursor_x * cam_pan_speed;
-            cam_pos -= cam_dir * delta_cursor_y * cam_pan_speed;
-        }
-
-        if (key_status[GLFW_KEY_UP])
-        {
-            cam_pos += cam_dir * cam_speed * (current_time - last_frame_time);
-        }
-        if (key_status[GLFW_KEY_DOWN])
-        {
-            cam_pos -= cam_dir * cam_speed * (current_time - last_frame_time);
-        }
-        if (key_status[GLFW_KEY_LEFT])
-        {
-            cam_pos -= cam_hand * cam_speed * (current_time - last_frame_time);
-        }
-        if (key_status[GLFW_KEY_RIGHT])
-        {
-            cam_pos += cam_hand * cam_speed * (current_time - last_frame_time);
-        }
+        camera.onEvents();
 
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         shader.use();
-
-        glm::mat4 model(1.0);
-        model = glm::translate(model, glm::vec3(-0.1, 0.0, 0.0));
-
-        glm::mat4 view(1.0);
-
-        view = glm::lookAt(cam_pos, cam_pos + cam_dir, cam_up);
-
-        glm::mat4 projection(1.0);
-        projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
-
         shader.setLights({{{100.0f, 0.1f, 0.1f}, {0.5f, 0.3f, 10.0f}}, {{1500000.0f, 1300000.0f, 1000000.0f}, {0.0f, 1000.0f, 0.0f}}});
-
-        shader.setUniform("model", model);
-        shader.setUniform("view", view);
-        shader.setUniform("projection", projection);
+        shader.setCamera(camera);
 
         m0.draw(shader);
 
         glfwSwapBuffers(window);
-
-        last_frame_time = current_time;
     }
 
     glfwTerminate();
