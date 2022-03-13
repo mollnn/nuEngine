@@ -76,6 +76,12 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
     return;
 }
 
+struct PointLight
+{
+    glm::vec3 intensity;
+    glm::vec3 position;
+};
+
 class Shader
 {
     int sp_;
@@ -149,18 +155,40 @@ public:
         glUseProgram(sp_);
     }
 
-    void setUniform(const std::string &name, int x)
+    void setUniformi(const std::string &name, int x)
     {
         glUniform1i(glGetUniformLocation(sp_, name.c_str()), x);
+    }
+
+    void setUniform(const std::string &name, float x)
+    {
+        glUniform1f(glGetUniformLocation(sp_, name.c_str()), x);
     }
 
     void setUniform(const std::string &name, float x, float y, float z)
     {
         glUniform3f(glGetUniformLocation(sp_, name.c_str()), x, y, z);
     }
+
+    void setUniform(const std::string &name, const glm::vec3 &value)
+    {
+        glUniform3fv(glGetUniformLocation(sp_, name.c_str()), 1, glm::value_ptr(value));
+    }
+
     void setUniform(const std::string &name, const glm::mat4 &value)
     {
         glUniformMatrix4fv(glGetUniformLocation(sp_, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
+    }
+
+    void setLights(const std::vector<PointLight> &lights)
+    {
+        setUniformi("n_point_light", lights.size());
+        for (int i = 0; i < lights.size(); i++)
+        {
+            auto &light = lights[i];
+            setUniform("point_light[" + std::to_string(i) + "].pos", light.position);
+            setUniform("point_light[" + std::to_string(i) + "].val", light.intensity);
+        }
     }
 
     GLuint id()
@@ -209,6 +237,7 @@ public:
 class Material
 {
     std::map<std::string, Texture *> textures;
+    std::map<std::string, float> properties_f;
 
     void loadTexturesAssimpType(aiTextureType type, const std::string &type_name, aiMaterial *mat, const std::string &dir = "")
     {
@@ -223,6 +252,11 @@ class Material
 
     void loadTexturesAssimp(aiMaterial *mat, const std::string &dir = "")
     {
+        float t;
+        if (AI_SUCCESS != mat->Get(AI_MATKEY_SHININESS, t))
+            t = 1.0f;
+        properties_f["shininess"] = t;
+
         loadTexturesAssimpType(aiTextureType_AMBIENT, "texture_ambient", mat, dir);
         loadTexturesAssimpType(aiTextureType_DIFFUSE, "texture_diffuse", mat, dir);
         loadTexturesAssimpType(aiTextureType_NORMALS, "texture_normals", mat, dir);
@@ -253,9 +287,13 @@ public:
         GLuint texture_unit_id = 0;
         for (auto &[k, v] : textures)
         {
-            shader.setUniform(k, texture_unit_id);
+            shader.setUniformi(k, texture_unit_id);
             v->use(texture_unit_id);
             texture_unit_id++;
+        }
+        for (auto &[k, v] : properties_f)
+        {
+            shader.setUniform(k, v);
         }
     }
 };
@@ -292,6 +330,7 @@ class Mesh
                 vertices_.push_back(0);
             }
         }
+
         for (int i = 0; i < mesh->mNumFaces; i++)
         {
             aiFace face = mesh->mFaces[i];
@@ -335,7 +374,7 @@ public:
         material_.use(shader);
         glBindVertexArray(vao_);
         glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-        glDrawElements(GL_TRIANGLES, n_,GL_UNSIGNED_INT , 0);
+        glDrawElements(GL_TRIANGLES, n_, GL_UNSIGNED_INT, 0);
     }
 };
 
@@ -423,6 +462,7 @@ int main()
     float pitch = 0.0f, yaw = 0.0f;
 
     GLfloat cam_speed = 0.5f;
+    GLfloat cam_pan_speed = 0.005f;
     GLfloat cam_rotate_speed = 1.0f;
 
     GLfloat last_frame_time = glfwGetTime();
@@ -460,6 +500,18 @@ int main()
         cam_up = glm::normalize(cam_up);
         cam_hand = glm::cross(cam_dir, cam_up);
 
+        if (key_status[GLFW_KEY_LEFT_CONTROL] && mouse_button_status[0])
+        {
+            cam_pos += cam_hand * delta_cursor_x * cam_pan_speed;
+            cam_pos -= cam_up * delta_cursor_y * cam_pan_speed;
+        }
+
+        if (key_status[GLFW_KEY_LEFT_SHIFT] && mouse_button_status[0])
+        {
+            cam_pos += cam_hand * delta_cursor_x * cam_pan_speed;
+            cam_pos -= cam_dir * delta_cursor_y * cam_pan_speed;
+        }
+
         if (key_status[GLFW_KEY_UP])
         {
             cam_pos += cam_dir * cam_speed * (current_time - last_frame_time);
@@ -492,11 +544,7 @@ int main()
         glm::mat4 projection(1.0);
         projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 1000.0f);
 
-        shader.setUniform("n_point_light", 2);
-        shader.setUniform("point_light[0].val", 100.0f, 0.1f, 0.1f);
-        shader.setUniform("point_light[0].pos", 0.5f, 0.3f, 10.0f);
-        shader.setUniform("point_light[1].val", 1500000.0f, 1300000.0f, 1000000.0f);
-        shader.setUniform("point_light[1].pos", 0.0f, 1000.0f, 0.0f);
+        shader.setLights({{{100.0f, 0.1f, 0.1f}, {0.5f, 0.3f, 10.0f}}, {{1500000.0f, 1300000.0f, 1000000.0f}, {0.0f, 1000.0f, 0.0f}}});
 
         shader.setUniform("model", model);
         shader.setUniform("view", view);

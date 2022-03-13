@@ -6,7 +6,9 @@ in vec2 vTex;
 
 out vec4 FragColor;
 
+uniform float shininess;
 uniform sampler2D diffuse_texture1;
+uniform sampler2D specular_texture1;
 
 struct PointLight 
 {
@@ -20,6 +22,7 @@ uniform PointLight point_light[4];
 void main()
 {
     vec3 color;
+    float Ns = shininess;
     for(int i=0;i<n_point_light;i++)
     {
         vec3 Pl = point_light[i].pos;
@@ -29,7 +32,9 @@ void main()
         vec3 Wi = normalize(Pl-Ps);
         vec3 Kd = texture(diffuse_texture1, vTex).xyz;
         vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n));
-        color += Ld;
+        vec3 Ks = texture(specular_texture1, vTex).xyz;
+        vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(Wi, n)), Ns);
+        color += Ld + Ls;
     }
     FragColor = vec4(color, 1.0);
 }
