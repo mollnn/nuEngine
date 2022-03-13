@@ -6,12 +6,12 @@ in vec2 vTex;
 
 out vec4 FragColor;
 
-uniform sampler2D tex;
+uniform sampler2D diffuse_texture1;
 
 struct PointLight 
 {
     vec3 pos;
-    vec3 val;
+    vec3 val; // intensity
 };
 
 uniform int n_point_light;
@@ -22,9 +22,14 @@ void main()
     vec3 color;
     for(int i=0;i<n_point_light;i++)
     {
-        vec3 Kd = texture(tex, vTex).xyz;
-        vec3 Id = 1.0 / 3.14159 * Kd * point_light[i].val / dot(point_light[i].pos - vPos, point_light[i].pos - vPos);
-        color += Id;
+        vec3 Pl = point_light[i].pos;
+        vec3 Ps = vPos;
+        vec3 n = vNormal;
+        vec3 Ei = point_light[i].val / dot(Pl-Ps, Pl-Ps);
+        vec3 Wi = normalize(Pl-Ps);
+        vec3 Kd = texture(diffuse_texture1, vTex).xyz;
+        vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n));
+        color += Ld;
     }
     FragColor = vec4(color, 1.0);
 }
