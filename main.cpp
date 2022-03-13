@@ -80,6 +80,10 @@ struct PointLight
 {
     glm::vec3 intensity;
     glm::vec3 position;
+
+    PointLight(const glm::vec3 &i, const glm::vec3 &p) : intensity(i), position(p)
+    {
+    }
 };
 
 struct Camera
@@ -331,8 +335,8 @@ public:
 
     void use(int unit_id)
     {
-        glActiveTexture(unit_id);
-        glBindTexture(GL_TEXTURE0 + unit_id, handle_);
+        glActiveTexture(GL_TEXTURE0 + unit_id);
+        glBindTexture(GL_TEXTURE_2D, handle_);
     }
 };
 
@@ -340,6 +344,7 @@ class Material
 {
     std::map<std::string, Texture *> textures;
     std::map<std::string, float> properties_f;
+    std::map<std::string, glm::vec3> properties_v3;
 
     void loadTexturesAssimpType(aiTextureType type, const std::string &type_name, aiMaterial *mat, const std::string &dir = "")
     {
@@ -358,6 +363,14 @@ class Material
         if (AI_SUCCESS != mat->Get(AI_MATKEY_SHININESS, t))
             t = 1.0f;
         properties_f["shininess"] = t;
+
+        glm::vec3 tv3;
+        if (AI_SUCCESS != mat->Get(AI_MATKEY_COLOR_DIFFUSE, t))
+            tv3 = glm::vec3(0.2f);
+        properties_v3["color_diffuse"] = tv3;
+        if (AI_SUCCESS != mat->Get(AI_MATKEY_COLOR_SPECULAR, t))
+            tv3 = glm::vec3(0.2f);
+        properties_v3["color_specular"] = tv3;
 
         loadTexturesAssimpType(aiTextureType_AMBIENT, "texture_ambient", mat, dir);
         loadTexturesAssimpType(aiTextureType_DIFFUSE, "texture_diffuse", mat, dir);
@@ -386,7 +399,12 @@ public:
     {
         // put textures into shader
         GLuint shader_id = shader.id();
-        GLuint texture_unit_id = 0;
+        GLuint texture_unit_id = 4; // first 4 units are reserved
+        for (GLuint i = texture_unit_id; i < texture_unit_id + 8; i++)
+        {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
         for (auto &[k, v] : textures)
         {
             shader.setUniformi(k, texture_unit_id);
@@ -394,6 +412,10 @@ public:
             texture_unit_id++;
         }
         for (auto &[k, v] : properties_f)
+        {
+            shader.setUniform(k, v);
+        }
+        for (auto &[k, v] : properties_v3)
         {
             shader.setUniform(k, v);
         }
@@ -555,22 +577,68 @@ int main()
     glEnable(GL_DEPTH_TEST);
 
     Model m0("spot.obj");
+    Model m1("test.obj");
     Shader shader("../shader.vs", "../shader.fs");
+    Shader shadow_shader("../shadow.vs", "../shadow.fs");
     Camera camera;
+
+    const GLuint SHADOW_MAP_WIDTH = 1024, SHADOW_MAP_HEIGHT = 1024;
+    GLuint shadow_map_fbo;
+    glGenFramebuffers(1, &shadow_map_fbo);
+    GLuint shadow_map_texture;
+    glGenTextures(1, &shadow_map_texture);
+    glBindTexture(GL_TEXTURE_2D, shadow_map_texture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    GLfloat texture_border_color[] = {1.0, 1.0, 1.0, 1.0};
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, texture_border_color);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_fbo);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, shadow_map_texture, 0);
+    glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
         camera.onEvents();
 
+        shadow_shader.use();
+        glm::mat4 light_view, light_proj, light_vp;
+        light_view = glm::lookAt(glm::vec3(0.0f, 10.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0, 0.0, 0.0));
+        light_proj = glm::perspective(glm::radians(30.0), 1.0, 1.0, 20.0);
+        light_vp = light_proj * light_view;
+
+        shadow_shader.setUniform("lvp", (light_vp));
+        shadow_shader.setUniform("model", (camera.model));
+
+        glViewport(0, 0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
+        glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_fbo);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        m0.draw(shadow_shader);
+        m1.draw(shadow_shader);
+
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, 512, 512);
+
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         shader.use();
-        shader.setLights({{{100.0f, 0.1f, 0.1f}, {0.5f, 0.3f, 10.0f}}, {{1500000.0f, 1300000.0f, 1000000.0f}, {0.0f, 1000.0f, 0.0f}}});
+        shader.setLights({PointLight(glm::vec3(1500.0f, 1300.0f, 1000.0f), glm::vec3(0.0f, 10.0f, 0.0f)),
+                          PointLight(glm::vec3(0.0f, 100.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))});
         shader.setCamera(camera);
+        shader.setUniform("lvp", (light_vp));
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, shadow_map_texture);
+        shader.setUniformi("cast_shadow", rand() % 2);
 
         m0.draw(shader);
+        m1.draw(shader);
 
         glfwSwapBuffers(window);
     }
