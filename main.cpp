@@ -343,6 +343,7 @@ public:
 class Material
 {
     std::map<std::string, Texture *> textures;
+    std::map<std::string, int> properties_i;
     std::map<std::string, float> properties_f;
     std::map<std::string, glm::vec3> properties_v3;
 
@@ -354,6 +355,8 @@ class Material
             mat->GetTexture(type, i, &filename);
             Texture *texture = new Texture(filename.C_Str());
             textures[type_name + std::to_string(i + 1)] = texture;
+            std::string flag_name = "usetex" + type_name.substr(7);
+            properties_i[flag_name] = 1;
         }
     }
 
@@ -365,12 +368,19 @@ class Material
         properties_f["shininess"] = t;
 
         glm::vec3 tv3;
-        if (AI_SUCCESS != mat->Get(AI_MATKEY_COLOR_DIFFUSE, t))
-            tv3 = glm::vec3(0.2f);
+        aiColor3D aitv3;
+        if (AI_SUCCESS != mat->Get(AI_MATKEY_COLOR_DIFFUSE, aitv3))
+            tv3 = glm::vec3(0.5f);
+        else
+            tv3.r = aitv3.r, tv3.g = aitv3.g, tv3.b = aitv3.b;
         properties_v3["color_diffuse"] = tv3;
-        if (AI_SUCCESS != mat->Get(AI_MATKEY_COLOR_SPECULAR, t))
-            tv3 = glm::vec3(0.2f);
+        properties_i["usetex_diffuse"] = 0;
+        if (AI_SUCCESS != mat->Get(AI_MATKEY_COLOR_SPECULAR, aitv3))
+            tv3 = glm::vec3(0.5f);
+        else
+            tv3.r = aitv3.r, tv3.g = aitv3.g, tv3.b = aitv3.b;
         properties_v3["color_specular"] = tv3;
+        properties_i["usetex_specular"] = 0;
 
         loadTexturesAssimpType(aiTextureType_AMBIENT, "texture_ambient", mat, dir);
         loadTexturesAssimpType(aiTextureType_DIFFUSE, "texture_diffuse", mat, dir);
@@ -410,15 +420,24 @@ public:
             shader.setUniformi(k, texture_unit_id);
             v->use(texture_unit_id);
             texture_unit_id++;
+            std::cout << k << " " << v << std::endl;
         }
         for (auto &[k, v] : properties_f)
         {
             shader.setUniform(k, v);
+            std::cout << k << " " << v << std::endl;
+        }
+        for (auto &[k, v] : properties_i)
+        {
+            shader.setUniformi(k, v);
+            std::cout << k << " " << v << std::endl;
         }
         for (auto &[k, v] : properties_v3)
         {
             shader.setUniform(k, v);
+            std::cout << k << " " << v.x << "," << v.y << "," << v.z << std::endl;
         }
+        std::cout << std::endl;
     }
 };
 
@@ -576,8 +595,7 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    Model m0("spot.obj");
-    Model m1("test.obj");
+    Model m0("mitsuba.obj");
     Shader shader("../shader.vs", "../shader.fs");
     Shader shadow_shader("../shadow.vs", "../shadow.fs");
     Camera camera;
@@ -621,7 +639,6 @@ int main()
         glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_fbo);
         glClear(GL_DEPTH_BUFFER_BIT);
         m0.draw(shadow_shader);
-        m1.draw(shadow_shader);
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, 512, 512);
@@ -629,8 +646,8 @@ int main()
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         shader.use();
-        shader.setLights({PointLight(glm::vec3(1500.0f, 1300.0f, 1000.0f), glm::vec3(0.0f, 10.0f, 0.0f)),
-                          PointLight(glm::vec3(0.0f, 100.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))});
+        shader.setLights({PointLight(glm::vec3(400.0f, 400.0f, 400.0f), glm::vec3(0.0f, 20.0f, 0.0f)),
+                          PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))});
         shader.setCamera(camera);
         shader.setUniform("lvp", (light_vp));
         glActiveTexture(GL_TEXTURE0);
@@ -638,7 +655,6 @@ int main()
         shader.setUniformi("cast_shadow", rand() % 2);
 
         m0.draw(shader);
-        m1.draw(shader);
 
         glfwSwapBuffers(window);
     }

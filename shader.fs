@@ -16,6 +16,7 @@ uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
 uniform sampler2D shadow_map;
 
+
 struct PointLight 
 {
     vec3 pos;
@@ -37,10 +38,10 @@ void main()
         vec3 Ei = point_light[i].val / dot(Pl-Ps, Pl-Ps);
         vec3 Wi = normalize(Pl-Ps);
         vec3 Kd = texture(texture_diffuse1, vTex).xyz;
-        if(textureSize(texture_diffuse1,0).x<=0) Kd=color_diffuse;
+        if(usetex_diffuse==0) Kd=color_diffuse;
         vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n));
         vec3 Ks = texture(texture_specular1, vTex).xyz;
-        if(textureSize(texture_specular1,0).x<=0) Ks=color_specular;
+        if(usetex_specular==0) Ks=color_specular;
         vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(Wi, n)), Ns);
         float vis = 1.0;
         if(i==0)
