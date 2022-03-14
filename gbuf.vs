@@ -6,12 +6,9 @@ layout (location = 2) in vec2 aTex;
 out vec3 vPos;
 out vec3 vNormal;
 out vec2 vTex;
-out vec4 vLPos;
-
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform mat4 lvp;
 
 void main()
 {
@@ -20,5 +17,4 @@ void main()
     vPos=(model * vec4(aPos, 1.0)).xyz;
     vTex=aTex;
     vNormal=(model_o*vec4(aNormal, 1.0)).xyz;
-    vLPos=(lvp*model*vec4(aPos,1.0));
 }
