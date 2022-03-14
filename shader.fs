@@ -49,8 +49,9 @@ void main()
             vec3 lc = vLPos.xyz / vLPos.w;
             lc = lc * 0.5 + 0.5;
             float d0 = texture(shadow_map, lc.xy).r;
-            float d = lc.z * 0.5 + 0.5;
-            vis = d > d0 + 0.1 ? 0.0 : 1.0;
+            float d = lc.z;
+            vis = d- d0 > 0.001 ? 0.0 : 1.0;
+            // color = vec3(d0 -d + 0.5, d-d0+0.5, d0 -d + 0.5);
         }
         color += (Ld + Ls) * vis;
     }
