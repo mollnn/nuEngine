@@ -20,15 +20,15 @@
 class Model
 {
     std::vector<Mesh> meshes;
-
     void loadModelAssimp(const std::string &filename);
 
 public:
+    std::vector<std::pair<std::shared_ptr<Model>, glm::mat4>> children;
     Model();
 
     Model(const std::string &filename);
-
-    void draw(Shader &shader);
+    void addChildren(std::shared_ptr<Model> model, const glm::mat4 &offset = glm::mat4(1.0f));
+    void draw(Shader &shader, const glm::mat4 &model_matrix = glm::mat4(1.0f));
 };
 
 #endif

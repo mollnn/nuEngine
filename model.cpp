@@ -33,10 +33,20 @@ Model::Model(const std::string &filename)
     loadModelAssimp(filename);
 }
 
-void Model::draw(Shader &shader)
+void Model::addChildren(std::shared_ptr<Model> model, const glm::mat4 &model_matrix)
 {
+    children.push_back({model, model_matrix});
+}
+
+void Model::draw(Shader &shader, const glm::mat4 &model_matrix)
+{
+    shader.setUniform("model", model_matrix);
     for (auto &i : meshes)
     {
         i.draw(shader);
+    }
+    for (auto &i : children)
+    {
+        i.first->draw(shader, i.second * model_matrix);
     }
 }
