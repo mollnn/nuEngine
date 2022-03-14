@@ -111,7 +111,7 @@ struct ShadowMapperPoint
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void lightPass(glm::vec3 shadow_light_pos, std::vector<Model *> scene)
+    void lightPass(glm::vec3 shadow_light_pos, Model *scene)
     {
         shadow_shader.use();
         glm::mat4 shadow_light_view[6], shadow_light_projection;
@@ -134,10 +134,7 @@ struct ShadowMapperPoint
             glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_fbo);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, shadow_map_texture, 0);
             glClear(GL_DEPTH_BUFFER_BIT);
-            for (auto m0 : scene)
-            {
-                m0->draw(shadow_shader);
-            }
+            scene->draw(shadow_shader);
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -148,6 +145,90 @@ struct ShadowMapperPoint
         shader.setUniform("shadowLimit", shadow_limit);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, shadow_map_texture);
+    }
+};
+
+struct GBuffer
+{
+    std::vector<GLfloat> vertices;
+    GLuint vao, vbo;
+    GLuint gbuffer_fb;
+    GLuint gbuffer_textures[5];
+    GLuint rbo_depth;
+    Shader gbuffer_shader;
+
+    GBuffer() : gbuffer_shader("../gbuf.vs", "../gbuf.fs")
+    {
+        glGenFramebuffers(1, &gbuffer_fb);
+        glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fb);
+
+        glGenTextures(5, gbuffer_textures);
+        for (int i = 0; i < 5; i++)
+        {
+            glBindTexture(GL_TEXTURE_2D, gbuffer_textures[i]);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, gbuffer_textures[i], 0);
+        }
+        GLuint att[5] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
+                         GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4};
+        glDrawBuffers(5, att);
+
+        glGenRenderbuffers(1, &rbo_depth);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo_depth);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 512, 512);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_depth);
+
+        vertices = {-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
+                    -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+                    1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+                    1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+                    1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
+                    -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
+
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(3 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(6 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(2);
+    }
+
+    void geometryPass(Model *scene, const Camera &camera)
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fb);
+
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        gbuffer_shader.use();
+        gbuffer_shader.setCamera(camera);
+
+        scene->draw(gbuffer_shader);
+    }
+
+    void lightingPass(Shader &lighting_shader)
+    {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+        for (int i = 0; i < 5; i++)
+        {
+            glActiveTexture(GL_TEXTURE4 + i);
+            glBindTexture(GL_TEXTURE_2D, gbuffer_textures[i]);
+        }
+        lighting_shader.setUniformi("gbuf0", 0 + 4);
+        lighting_shader.setUniformi("gbuf1", 1 + 4);
+        lighting_shader.setUniformi("gbuf2", 2 + 4);
+        lighting_shader.setUniformi("gbuf3", 3 + 4);
+        lighting_shader.setUniformi("gbuf4", 4 + 4);
+        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
     }
 };
 
@@ -181,62 +262,18 @@ int main()
     Model scene;
     scene.addChildren(std::make_shared<Model>("mitsuba.obj"));
     scene.addChildren(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f, 0.7f, 0.0f)));
-    Shader shader("../gbuf.vs", "../gbuf.fs");
     Camera camera;
     CameraControl cam_control;
     cam_control.bind(&camera);
 
     ShadowMapperPoint shadow_map_p;
 
-    GLuint gbuffer_fb;
-    glGenFramebuffers(1, &gbuffer_fb);
-    glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fb);
-    GLuint gbuffer_textures[5];
-
-    glGenTextures(5, gbuffer_textures);
-    for (int i = 0; i < 5; i++)
-    {
-        glBindTexture(GL_TEXTURE_2D, gbuffer_textures[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, gbuffer_textures[i], 0);
-    }
-    GLuint att[5] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
-                     GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4};
-    glDrawBuffers(5, att);
-
-    GLuint rbo_depth;
-    glGenRenderbuffers(1, &rbo_depth);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo_depth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 512, 512);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_depth);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+    Shader lighting_shader("../lighting.vs", "../lighting.fs");
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-    std::vector<GLfloat> vertices = {-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-                                     -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-                                     1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-                                     1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-                                     1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,
-                                     -1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f};
-
-    GLuint vao, vbo;
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(3 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(6 * sizeof(GLfloat)));
-    glEnableVertexAttribArray(2);
-
-    Shader lighting_shader("../lighting.vs", "../lighting.fs");
+    GBuffer gbuffer;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -246,49 +283,22 @@ int main()
         scene.children[1].second = glm::rotate(scene.children[1].second, 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
 
         // GEN SHADOW
-
-        std::vector<Model *> scenes;
-        scenes.push_back(&scene);
-        shadow_map_p.lightPass(glm::vec3(-10.0f, 10.0f, 0.0f), scenes);
+        shadow_map_p.lightPass(glm::vec3(-10.0f, 10.0f, 0.0f), &scene);
 
         glViewport(0, 0, 512, 512);
 
         // GEOMETRY STAGE
-
-        glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fb);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        shader.use();
-        shader.setCamera(camera);
-
-        scene.draw(shader);
+        gbuffer.geometryPass(&scene, camera);
 
         // LIGHTING STAGE
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
         lighting_shader.use();
         lighting_shader.setLights({PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 10.0f, 0.0f)),
                                    PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))});
         shadow_map_p.use(lighting_shader);
-        for (int i = 0; i < 5; i++)
-        {
-            glActiveTexture(GL_TEXTURE4 + i);
-            glBindTexture(GL_TEXTURE_2D, gbuffer_textures[i]);
-        }
-        lighting_shader.setUniformi("gbuf0", 0 + 4);
-        lighting_shader.setUniformi("gbuf1", 1 + 4);
-        lighting_shader.setUniformi("gbuf2", 2 + 4);
-        lighting_shader.setUniformi("gbuf3", 3 + 4);
-        lighting_shader.setUniformi("gbuf4", 4 + 4);
+        gbuffer.lightingPass(lighting_shader);
 
-        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
         glfwSwapBuffers(window);
     }
 
