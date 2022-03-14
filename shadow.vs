@@ -6,7 +6,10 @@ layout (location = 2) in vec2 aTex;
 uniform mat4 lvp;
 uniform mat4 model;
 
+out vec3 fragPos;
+
 void main()
 {
     gl_Position = lvp * model * vec4(aPos, 1.0f);
+    fragPos = (model * vec4(aPos, 1.0f)).xyz;
 }

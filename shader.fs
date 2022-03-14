@@ -14,8 +14,9 @@ uniform int usetex_specular;
 uniform float shininess;
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_specular1;
-uniform sampler2D shadow_map;
+uniform samplerCube shadow_map;
 
+uniform float shadowLimit;
 
 struct PointLight 
 {
@@ -46,11 +47,10 @@ void main()
         float vis = 1.0;
         if(i==0)
         {
-            vec3 lc = vLPos.xyz / vLPos.w;
-            lc = lc * 0.5 + 0.5;
-            float d0 = texture(shadow_map, lc.xy).r;
-            float d = lc.z;
-            vis = d- d0 > 0.001 ? 0.0 : 1.0;
+            vec3 dp = vPos - point_light[0].pos;
+            float d0 = texture(shadow_map, dp).r * shadowLimit;
+            float d = length(dp);
+            vis = d- d0 > 0.05 ? 0.0 : 1.0;
             // color = vec3(d0 -d + 0.5, d-d0+0.5, d0 -d + 0.5);
         }
         color += (Ld + Ls) * vis;
