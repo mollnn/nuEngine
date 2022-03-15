@@ -16,9 +16,10 @@ class Texture
     static GLuint loadTexture(const std::string &tex_name);
 
 public:
-    Texture(const std::string &tex_name);
+    Texture(const std::string &tex_name = "");
 
     void use(int unit_id);
+    int id();
 };
 
 #endif

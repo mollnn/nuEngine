@@ -9,11 +9,14 @@
 #include <bits/stdc++.h>
 #include "camera.h"
 #include "pointlight.h"
+#include "texture.h"
 
 class Shader
 {
     int sp_;
     static GLuint loadShader(const std::string &vs_name, const std::string &fs_name);
+
+    std::map<std::string, Texture*> textures;
 
 public:
     Shader(const std::string &vs_name, const std::string &fs_name);
@@ -26,6 +29,8 @@ public:
     void setLights(const std::vector<PointLight> &lights);
     void setMVP(const glm::mat4 &view, const glm::mat4 &projection);
     void setCamera(const Camera &camera);
+    void setTexture(const std::string& name, Texture* texture);
+    void solveTextures();
     GLuint id();
 };
 

@@ -119,3 +119,20 @@ GLuint Shader::id()
 {
     return sp_;
 }
+
+void Shader::setTexture(const std::string &name, Texture *texture)
+{
+    textures[name] = texture;
+}
+
+void Shader::solveTextures()
+{
+    int idx = 0;
+    for (auto &[k, v] : textures)
+    {
+        glActiveTexture(GL_TEXTURE0 + idx);
+        glBindTexture(GL_TEXTURE_2D, v->id());
+        setUniformi(k, idx);
+        idx++;
+    }
+}

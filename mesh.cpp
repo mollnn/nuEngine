@@ -64,5 +64,6 @@ void Mesh::draw(Shader &shader)
     material_.use(shader);
     glBindVertexArray(vao_);
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
+    shader.solveTextures();
     glDrawElements(GL_TRIANGLES, n_, GL_UNSIGNED_INT, 0);
 }

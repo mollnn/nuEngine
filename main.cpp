@@ -93,7 +93,6 @@ struct ShadowMapperPoint
     ShadowMapperPoint() : shadow_shader("../shadow.vs", "../shadow.fs")
     {
         glGenFramebuffers(1, &shadow_map_fbo);
-
         glGenTextures(1, &shadow_map_texture);
         glBindTexture(GL_TEXTURE_CUBE_MAP, shadow_map_texture);
         for (int i = 0; i < 6; i++)
@@ -140,11 +139,49 @@ struct ShadowMapperPoint
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void use(Shader &shader)
+    void attach(Shader &shader)
     {
         shader.setUniform("shadowLimit", shadow_limit);
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, shadow_map_texture);
+        glActiveTexture(GL_TEXTURE15);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, shadow_map_texture);
+        shader.setUniformi("shadow_map", 15);
+    }
+};
+
+class FramebufferObject
+{
+    GLuint fb_;
+    GLuint rbo_;
+
+public:
+    FramebufferObject(const std::vector<Texture *> &attachments, int width, int height)
+    {
+        glGenFramebuffers(1, &fb_);
+        glBindFramebuffer(GL_FRAMEBUFFER, fb_);
+
+        std::vector<GLuint> atts;
+
+        for (int i = 0; i < attachments.size(); i++)
+        {
+            atts.push_back(GL_COLOR_ATTACHMENT0 + i);
+            glBindTexture(GL_TEXTURE_2D, attachments[i]->id());
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachments[i]->id(), 0);
+        }
+        glDrawBuffers(attachments.size(), atts.data());
+
+        glGenRenderbuffers(1, &rbo_);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo_);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_);
+    }
+
+    void use()
+    {
+        glBindFramebuffer(GL_FRAMEBUFFER, fb_);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 };
 
@@ -153,34 +190,20 @@ struct DeferredRenderer
     static const int n_gbuffer = 6;
     std::vector<GLfloat> vertices;
     GLuint vao, vbo;
-    GLuint gbuffer_fb;
-    GLuint gbuffer_textures[n_gbuffer];
-    GLuint rbo_depth;
     Shader gbuffer_shader;
+    Texture gbuffer_texture[n_gbuffer];
+    FramebufferObject gbuffer_fbo;
+    int width_, height_;
 
-    DeferredRenderer() : gbuffer_shader("../gbuf.vs", "../gbuf.fs")
+    DeferredRenderer(int width, int height) : width_(width), height_(height), gbuffer_shader("../gbuf.vs", "../gbuf.fs"),
+                                              gbuffer_fbo(std::vector<Texture *>({gbuffer_texture + 0,
+                                                                                  gbuffer_texture + 1,
+                                                                                  gbuffer_texture + 2,
+                                                                                  gbuffer_texture + 3,
+                                                                                  gbuffer_texture + 4,
+                                                                                  gbuffer_texture + 5}),
+                                                          width, height)
     {
-        glGenFramebuffers(1, &gbuffer_fb);
-        glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fb);
-
-        glGenTextures(n_gbuffer, gbuffer_textures);
-        GLuint att[n_gbuffer];
-        for (int i = 0; i < n_gbuffer; i++)
-        {
-            att[i] = GL_COLOR_ATTACHMENT0 + i;
-            glBindTexture(GL_TEXTURE_2D, gbuffer_textures[i]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 512, 512, 0, GL_RGBA, GL_FLOAT, NULL);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, gbuffer_textures[i], 0);
-        }
-        glDrawBuffers(n_gbuffer, att);
-
-        glGenRenderbuffers(1, &rbo_depth);
-        glBindRenderbuffer(GL_RENDERBUFFER, rbo_depth);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, 512, 512);
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_depth);
-
         vertices = {-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
                     -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
                     1.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
@@ -203,29 +226,23 @@ struct DeferredRenderer
 
     void geometryPass(Model *scene, const Camera &camera)
     {
-        glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fb);
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        gbuffer_fbo.use();
         gbuffer_shader.use();
         gbuffer_shader.setCamera(camera);
-
         scene->draw(gbuffer_shader);
     }
 
     void lightingPass(Shader &lighting_shader)
     {
         lighting_shader.use();
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
         for (int i = 0; i < n_gbuffer; i++)
         {
-            glActiveTexture(GL_TEXTURE4 + i);
-            glBindTexture(GL_TEXTURE_2D, gbuffer_textures[i]);
-            lighting_shader.setUniformi("gbuf" + std::to_string(i), i + 4);
+            lighting_shader.setTexture("gbuf" + std::to_string(i), gbuffer_texture + i);
         }
+        lighting_shader.solveTextures();
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
     }
 };
@@ -256,7 +273,6 @@ int main()
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     glEnable(GL_DEPTH_TEST);
-    
 
     Model scene;
     scene.addChildren(std::make_shared<Model>("mitsuba.obj"));
@@ -273,7 +289,7 @@ int main()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     Shader ssao_shader("../ssao.vs", "../ssao.fs");
-    DeferredRenderer deferred_renderer;
+    DeferredRenderer deferred_renderer(512, 512);
 
     std::vector<glm::vec3> ssao_kernel;
     std::normal_distribution<GLfloat> random_float(0.0, 1.0);
@@ -284,23 +300,8 @@ int main()
         ssao_kernel.push_back(sample);
     }
 
-    GLuint ao_fb, ao_texs[1];
-    int n_aotex = 1;
-    glGenFramebuffers(1, &ao_fb);
-    glBindFramebuffer(GL_FRAMEBUFFER, ao_fb);
-
-    glGenTextures(n_aotex, ao_texs);
-    GLuint att[n_aotex];
-    for (int i = 0; i < n_aotex; i++)
-    {
-        att[i] = GL_COLOR_ATTACHMENT0 + i;
-        glBindTexture(GL_TEXTURE_2D, ao_texs[i]);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 512, 512, 0, GL_RGBA, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, ao_texs[i], 0);
-    }
-    glDrawBuffers(n_aotex, att);
+    Texture ssao_texture;
+    FramebufferObject ssao_fbo({&ssao_texture}, 512, 512);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -318,7 +319,7 @@ int main()
         deferred_renderer.geometryPass(&scene, camera);
 
         // AO STAGE
-        glBindFramebuffer(GL_FRAMEBUFFER, ao_fb);
+        ssao_fbo.use();
         ssao_shader.use();
         ssao_shader.setUniform("near", 0.1f);
         ssao_shader.setUniform("far", 100.0f);
@@ -331,15 +332,16 @@ int main()
 
         // LIGHTING STAGE
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         lighting_shader.use();
         lighting_shader.setLights({PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 10.0f, 0.0f)),
                                    PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))});
-        lighting_shader.setUniform("ambient", glm::vec3(0.4f, 0.4f, 0.5f));
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, ao_texs[0]);
-        lighting_shader.setUniformi("ao", 1);
-        shadow_map_p.use(lighting_shader);
+        lighting_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.3f));
+
+        shadow_map_p.attach(lighting_shader);
+        lighting_shader.setTexture("ao", &ssao_texture);
+        lighting_shader.solveTextures();
         deferred_renderer.lightingPass(lighting_shader);
 
         glfwSwapBuffers(window);
