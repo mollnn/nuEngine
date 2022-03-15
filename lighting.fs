@@ -9,9 +9,12 @@ uniform sampler2D gbuf1;
 uniform sampler2D gbuf2;
 uniform sampler2D gbuf3;
 uniform sampler2D gbuf4;
+uniform sampler2D gbuf5;
 
 uniform samplerCube shadow_map;
 uniform float shadowLimit;
+
+uniform vec3 ambient;
 
 struct PointLight 
 {
@@ -26,11 +29,12 @@ void main()
 {
     vec3 vPos = texture(gbuf0, vTex).xyz;
     vec3 vNormal = texture(gbuf1, vTex).xyz;
-    vec3 Kd = texture(gbuf2, vTex).xyz;
-    vec3 Ks = texture(gbuf3, vTex).xyz;
-    float Ns = texture(gbuf4, vTex).x;
+    vec3 Ka = texture(gbuf2, vTex).xyz;
+    vec3 Kd = texture(gbuf3, vTex).xyz;
+    vec3 Ks = texture(gbuf4, vTex).xyz;
+    float Ns = texture(gbuf5, vTex).x;
 
-    vec3 color;
+    vec3 color = ambient * Ka;
     vec3 Ps = vPos;
     vec3 n = vNormal;
     for(int i=0;i<n_point_light;i++)

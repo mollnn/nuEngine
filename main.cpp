@@ -148,32 +148,33 @@ struct ShadowMapperPoint
     }
 };
 
-struct GBuffer
+struct DeferredRenderer
 {
+    static const int n_gbuffer = 6;
     std::vector<GLfloat> vertices;
     GLuint vao, vbo;
     GLuint gbuffer_fb;
-    GLuint gbuffer_textures[5];
+    GLuint gbuffer_textures[n_gbuffer];
     GLuint rbo_depth;
     Shader gbuffer_shader;
 
-    GBuffer() : gbuffer_shader("../gbuf.vs", "../gbuf.fs")
+    DeferredRenderer() : gbuffer_shader("../gbuf.vs", "../gbuf.fs")
     {
         glGenFramebuffers(1, &gbuffer_fb);
         glBindFramebuffer(GL_FRAMEBUFFER, gbuffer_fb);
 
-        glGenTextures(5, gbuffer_textures);
-        for (int i = 0; i < 5; i++)
+        glGenTextures(n_gbuffer, gbuffer_textures);
+        GLuint att[n_gbuffer];
+        for (int i = 0; i < n_gbuffer; i++)
         {
+            att[i] = GL_COLOR_ATTACHMENT0 + i;
             glBindTexture(GL_TEXTURE_2D, gbuffer_textures[i]);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, gbuffer_textures[i], 0);
         }
-        GLuint att[5] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2,
-                         GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT4};
-        glDrawBuffers(5, att);
+        glDrawBuffers(n_gbuffer, att);
 
         glGenRenderbuffers(1, &rbo_depth);
         glBindRenderbuffer(GL_RENDERBUFFER, rbo_depth);
@@ -218,16 +219,12 @@ struct GBuffer
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < n_gbuffer; i++)
         {
             glActiveTexture(GL_TEXTURE4 + i);
             glBindTexture(GL_TEXTURE_2D, gbuffer_textures[i]);
+            lighting_shader.setUniformi("gbuf" + std::to_string(i), i + 4);
         }
-        lighting_shader.setUniformi("gbuf0", 0 + 4);
-        lighting_shader.setUniformi("gbuf1", 1 + 4);
-        lighting_shader.setUniformi("gbuf2", 2 + 4);
-        lighting_shader.setUniformi("gbuf3", 3 + 4);
-        lighting_shader.setUniformi("gbuf4", 4 + 4);
         glDrawArrays(GL_TRIANGLES, 0, vertices.size());
     }
 };
@@ -273,7 +270,7 @@ int main()
     Shader lighting_shader("../lighting.vs", "../lighting.fs");
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-    GBuffer gbuffer;
+    DeferredRenderer deferred_renderer;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -288,7 +285,7 @@ int main()
         glViewport(0, 0, 512, 512);
 
         // GEOMETRY STAGE
-        gbuffer.geometryPass(&scene, camera);
+        deferred_renderer.geometryPass(&scene, camera);
 
         // LIGHTING STAGE
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -296,8 +293,9 @@ int main()
         lighting_shader.use();
         lighting_shader.setLights({PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 10.0f, 0.0f)),
                                    PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))});
+        lighting_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.3f));
         shadow_map_p.use(lighting_shader);
-        gbuffer.lightingPass(lighting_shader);
+        deferred_renderer.lightingPass(lighting_shader);
 
         glfwSwapBuffers(window);
     }

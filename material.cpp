@@ -22,12 +22,21 @@ void Material::loadTexturesAssimp(aiMaterial *mat, const std::string &dir)
 
     glm::vec3 tv3;
     aiColor3D aitv3;
+
+    if (AI_SUCCESS != mat->Get(AI_MATKEY_COLOR_AMBIENT, aitv3))
+        tv3 = glm::vec3(0.0f);
+    else
+        tv3.r = aitv3.r, tv3.g = aitv3.g, tv3.b = aitv3.b;
+    properties_v3["color_ambient"] = tv3;
+    properties_i["usetex_ambient"] = 0;
+
     if (AI_SUCCESS != mat->Get(AI_MATKEY_COLOR_DIFFUSE, aitv3))
         tv3 = glm::vec3(0.5f);
     else
         tv3.r = aitv3.r, tv3.g = aitv3.g, tv3.b = aitv3.b;
     properties_v3["color_diffuse"] = tv3;
     properties_i["usetex_diffuse"] = 0;
+
     if (AI_SUCCESS != mat->Get(AI_MATKEY_COLOR_SPECULAR, aitv3))
         tv3 = glm::vec3(0.5f);
     else
