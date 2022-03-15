@@ -169,7 +169,7 @@ struct DeferredRenderer
         {
             att[i] = GL_COLOR_ATTACHMENT0 + i;
             glBindTexture(GL_TEXTURE_2D, gbuffer_textures[i]);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, NULL);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 512, 512, 0, GL_RGBA, GL_FLOAT, NULL);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, gbuffer_textures[i], 0);
@@ -215,6 +215,7 @@ struct DeferredRenderer
 
     void lightingPass(Shader &lighting_shader)
     {
+        lighting_shader.use();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glBindVertexArray(vao);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -255,6 +256,7 @@ int main()
     gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
     glEnable(GL_DEPTH_TEST);
+    
 
     Model scene;
     scene.addChildren(std::make_shared<Model>("mitsuba.obj"));
@@ -270,7 +272,35 @@ int main()
     Shader lighting_shader("../lighting.vs", "../lighting.fs");
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
+    Shader ssao_shader("../ssao.vs", "../ssao.fs");
     DeferredRenderer deferred_renderer;
+
+    std::vector<glm::vec3> ssao_kernel;
+    std::normal_distribution<GLfloat> random_float(0.0, 1.0);
+    std::default_random_engine generator;
+    for (int i = 0; i < 64; i++)
+    {
+        glm::vec3 sample(random_float(generator), random_float(generator), random_float(generator));
+        ssao_kernel.push_back(sample);
+    }
+
+    GLuint ao_fb, ao_texs[1];
+    int n_aotex = 1;
+    glGenFramebuffers(1, &ao_fb);
+    glBindFramebuffer(GL_FRAMEBUFFER, ao_fb);
+
+    glGenTextures(n_aotex, ao_texs);
+    GLuint att[n_aotex];
+    for (int i = 0; i < n_aotex; i++)
+    {
+        att[i] = GL_COLOR_ATTACHMENT0 + i;
+        glBindTexture(GL_TEXTURE_2D, ao_texs[i]);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 512, 512, 0, GL_RGBA, GL_FLOAT, NULL);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, ao_texs[i], 0);
+    }
+    glDrawBuffers(n_aotex, att);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -287,13 +317,28 @@ int main()
         // GEOMETRY STAGE
         deferred_renderer.geometryPass(&scene, camera);
 
+        // AO STAGE
+        glBindFramebuffer(GL_FRAMEBUFFER, ao_fb);
+        ssao_shader.use();
+        ssao_shader.setUniform("near", 0.1f);
+        ssao_shader.setUniform("far", 100.0f);
+        ssao_shader.setCamera(camera);
+        for (int i = 0; i < 64; i++)
+        {
+            ssao_shader.setUniform("ssao_kernel[" + std::to_string(i) + "]", ssao_kernel[i]);
+        }
+        deferred_renderer.lightingPass(ssao_shader);
+
         // LIGHTING STAGE
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
         lighting_shader.use();
         lighting_shader.setLights({PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 10.0f, 0.0f)),
                                    PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))});
-        lighting_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.3f));
+        lighting_shader.setUniform("ambient", glm::vec3(0.4f, 0.4f, 0.5f));
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, ao_texs[0]);
+        lighting_shader.setUniformi("ao", 1);
         shadow_map_p.use(lighting_shader);
         deferred_renderer.lightingPass(lighting_shader);
 

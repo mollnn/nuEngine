@@ -6,17 +6,13 @@ layout (location = 2) in vec2 aTex;
 out vec3 vPos;
 out vec3 vNormal;
 out vec2 vTex;
-out vec4 glPos;
+
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
 void main()
 {
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
-    glPos = gl_Position;
-    mat4 model_o = transpose(inverse(model));
-    vPos=(model * vec4(aPos, 1.0)).xyz;
+    gl_Position = vec4(aPos, 1.0);
     vTex=aTex;
-    vNormal=(model_o*vec4(aNormal, 1.0)).xyz;
 }

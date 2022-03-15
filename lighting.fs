@@ -10,6 +10,7 @@ uniform sampler2D gbuf2;
 uniform sampler2D gbuf3;
 uniform sampler2D gbuf4;
 uniform sampler2D gbuf5;
+uniform sampler2D ao;
 
 uniform samplerCube shadow_map;
 uniform float shadowLimit;
@@ -34,7 +35,7 @@ void main()
     vec3 Ks = texture(gbuf4, vTex).xyz;
     float Ns = texture(gbuf5, vTex).x;
 
-    vec3 color = ambient * Ka;
+    vec3 color = ambient * Ka * (texture(ao, vTex).r);
     vec3 Ps = vPos;
     vec3 n = vNormal;
     for(int i=0;i<n_point_light;i++)
@@ -54,6 +55,5 @@ void main()
         }
         color += (Ld + Ls) * vis;
     }
-
     FragColor = vec4(color, 1.0);
 }

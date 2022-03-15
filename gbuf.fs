@@ -3,13 +3,14 @@
 in vec3 vPos;
 in vec3 vNormal;
 in vec2 vTex;
+in vec4 glPos;
 
-layout (location = 0) out vec3 gPos;
-layout (location = 1) out vec3 gNormal;
-layout (location = 2) out vec3 gKa;
-layout (location = 3) out vec3 gKd;
-layout (location = 4) out vec3 gKs;
-layout (location = 5) out vec3 gNs;
+layout (location = 0) out vec4 gPosDepth;
+layout (location = 1) out vec4 gNormal;
+layout (location = 2) out vec4 gKa;
+layout (location = 3) out vec4 gKd;
+layout (location = 4) out vec4 gKs;
+layout (location = 5) out vec4 gNs;
 
 uniform vec3 color_ambient;
 uniform int usetex_ambient;
@@ -42,10 +43,10 @@ void main()
     if(usetex_diffuse==0) Kd=color_diffuse;
     vec3 Ks = texture(texture_specular1, vTex).xyz;
     if(usetex_specular==0) Ks=color_specular;
-    gPos = vPos;
-    gNormal = vNormal;
-    gKa = Ka;
-    gKd = Kd;
-    gKs = Ks;
-    gNs = vec3(Ns,Ns,Ns);
+    gPosDepth = vec4(vPos, glPos.z / glPos.w);
+    gNormal = vec4(vNormal, 1.0);
+    gKa = vec4(Ka, 1.0);
+    gKd = vec4(Kd, 1.0);
+    gKs = vec4(Ks, 1.0);
+    gNs = vec4(Ns,Ns,Ns,Ns);
 }
