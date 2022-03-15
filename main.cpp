@@ -19,6 +19,7 @@
 bool key_status[512];
 float mouse_x, mouse_y;
 bool mouse_button_status[3];
+const int screen_x = 1280, screen_y = 720;
 
 void framesizeCallback(GLFWwindow *window, int width, int height)
 {
@@ -84,7 +85,7 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
 
 struct ShadowMapperPoint
 {
-    const GLuint SHADOW_MAP_WIDTH = 1024, SHADOW_MAP_HEIGHT = 1024;
+    const GLuint SHADOW_MAP_WIDTH = 2048, SHADOW_MAP_HEIGHT = 2048;
     Shader shadow_shader;
     GLuint shadow_map_fbo;
     GLuint shadow_map_texture;
@@ -256,7 +257,7 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow *window = glfwCreateWindow(512, 512, "Nightup Engine v0.1", nullptr, nullptr);
+    GLFWwindow *window = glfwCreateWindow(screen_x, screen_y, "Nightup Engine v0.1", nullptr, nullptr);
     if (window == nullptr)
     {
         std::cerr << "Failed at glfwCreateWindow" << std::endl;
@@ -278,10 +279,11 @@ int main()
     scene.addChildren(std::make_shared<Model>("mitsuba.obj"));
     scene.addChildren(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f, 0.7f, 0.0f)));
     Camera camera;
+    camera.aspect = 1.0f * screen_x / screen_y;
     CameraControl cam_control;
     cam_control.bind(&camera);
 
-    ShadowMapperPoint shadow_map_p;
+    ShadowMapperPoint shadow_map_point_light;
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -289,11 +291,12 @@ int main()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
     Shader ssao_shader("../ssao.vs", "../ssao.fs");
-    DeferredRenderer deferred_renderer(512, 512);
+    DeferredRenderer deferred_renderer(screen_x, screen_y);
 
     std::vector<glm::vec3> ssao_kernel;
     std::normal_distribution<GLfloat> random_float(0.0, 1.0);
     std::default_random_engine generator;
+
     for (int i = 0; i < 64; i++)
     {
         glm::vec3 sample(random_float(generator), random_float(generator), random_float(generator));
@@ -301,7 +304,12 @@ int main()
     }
 
     Texture ssao_texture;
-    FramebufferObject ssao_fbo({&ssao_texture}, 512, 512);
+    FramebufferObject ssao_fbo({&ssao_texture}, screen_x, screen_y);
+
+    std::vector<PointLight> lights = {PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 10.0f, 0.0f)),
+                                      PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))};
+
+    glm::vec3 ambient_light_irradiance(0.3f, 0.3f, 0.3f);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -311,18 +319,18 @@ int main()
         scene.children[1].second = glm::rotate(scene.children[1].second, 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
 
         // GEN SHADOW
-        shadow_map_p.lightPass(glm::vec3(-10.0f, 10.0f, 0.0f), &scene);
+        shadow_map_point_light.lightPass(lights[0].position, &scene);
 
-        glViewport(0, 0, 512, 512);
+        glViewport(0, 0, screen_x, screen_y);
 
         // GEOMETRY STAGE
         deferred_renderer.geometryPass(&scene, camera);
 
-        // AO STAGE
+        // SSAO STAGE
         ssao_fbo.use();
         ssao_shader.use();
-        ssao_shader.setUniform("near", 0.1f);
-        ssao_shader.setUniform("far", 100.0f);
+        ssao_shader.setUniform("near", camera.near);
+        ssao_shader.setUniform("far", camera.far);
         ssao_shader.setCamera(camera);
         for (int i = 0; i < 64; i++)
         {
@@ -335,11 +343,10 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         lighting_shader.use();
-        lighting_shader.setLights({PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 10.0f, 0.0f)),
-                                   PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))});
-        lighting_shader.setUniform("ambient", glm::vec3(0.2f, 0.2f, 0.3f));
+        lighting_shader.setLights(lights);
+        lighting_shader.setUniform("ambient", ambient_light_irradiance);
 
-        shadow_map_p.attach(lighting_shader);
+        shadow_map_point_light.attach(lighting_shader);
         lighting_shader.setTexture("ao", &ssao_texture);
         lighting_shader.solveTextures();
         deferred_renderer.lightingPass(lighting_shader);

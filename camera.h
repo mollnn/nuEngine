@@ -14,7 +14,12 @@ struct Camera
     glm::vec3 cam_dir;
     glm::vec3 cam_up;
 
-    float pitch = 0.0f, yaw = 0.0f;
+    float pitch = 0.0f, yaw = -90.0f;
+
+    float fov = 45.0f;
+    float aspect = 1.0f;
+    float near = 0.1f;
+    float far = 100.0f;
 
     glm::mat4 view;
     glm::mat4 projection;

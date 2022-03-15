@@ -12,5 +12,5 @@ Camera::Camera()
 void Camera::eval()
 {
     view = glm::lookAt(cam_pos, cam_pos + cam_dir, cam_up);
-    projection = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(fov), aspect, near, far);
 }
