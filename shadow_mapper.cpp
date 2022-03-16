@@ -37,7 +37,7 @@ void ShadowMapper::lightPass(glm::vec3 shadow_light_pos, glm::vec3 shadow_light_
     shadow_light_view[3] = glm::lookAt(shadow_light_pos, shadow_light_pos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0, 0.0, -1.0));
     shadow_light_view[4] = glm::lookAt(shadow_light_pos, shadow_light_pos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0, -1.0, 0.0));
     shadow_light_view[5] = glm::lookAt(shadow_light_pos, shadow_light_pos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0, -1.0, 0.0));
-    shadow_light_projection = glm::perspective(glm::radians(90.0), 1.0, 1.0, 100.0);
+    shadow_light_projection = glm::perspective(glm::radians(90.0), 1.0, 0.1, 100.0);
 
     shadow_shader.setUniform("model", (glm::mat4(1.0f)));
     shadow_shader.setUniform("lightPos", shadow_light_pos);

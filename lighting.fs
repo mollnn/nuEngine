@@ -37,7 +37,7 @@ float rndPseudoGaussian(float alpha)
 {
     float x=2*alpha-1;
     float y=x*x*x;
-    return y*0.5+0.5;
+    return y;
 }
 
 
@@ -60,8 +60,8 @@ void main()
         vec3 Wi = normalize(Pl-Ps);
         vec3 Wo = normalize(camera_pos-Ps);
         vec3 h = normalize(Wi + Wo);
-        vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n));
-        vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns);
+        vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
+        vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns)  * (dot(Wo, n) > 0 ? 1.0 : 0.0);
         float vis = 1.0;
         if(i==0)
         {
@@ -74,7 +74,7 @@ void main()
         color += (Ld + Ls) * vis;
     }
 
-    // color = vec3(0.0, 0.0, 0.0);
+    color = vec3(0.0, 0.0, 0.0);
 
     // RSM 
     vec3 rsm_contribution = vec3(0.0,0.0,0.0);
@@ -83,7 +83,7 @@ void main()
     {
         vec3 dp = vPos - point_light[0].pos;
         vec3 bias = vec3(rndPseudoGaussian(rnds[i*3]), rndPseudoGaussian(rnds[i*3+1]), rndPseudoGaussian(rnds[i*3+2]));
-        vec3 dir = normalize(dp) + bias * 0.2;
+        vec3 dir = normalize(dp) + bias * 0.3;
         dir = normalize(dir);
 
         vec3 sample_pos = texture(shadow_map_pos, dir).xyz;
@@ -96,14 +96,12 @@ void main()
         float dot2 = max(0.0, dot(normal, -dir_bounce));
         vec3 E = sample_flux / 3.14159 * dot1 * dot2 / dist2_bounce;
         float weight = dot(bias, bias);
-
-        vec3 Ei = 1.0 * E * weight;
-
+        vec3 Ei = E * weight;
         vec3 Wi = -dir_bounce;
         vec3 Wo = normalize(camera_pos-Ps);
         vec3 h = normalize(Wi + Wo);
-        vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n));
-        vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns);
+        vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
+        vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
         rsm_contribution += Ld + Ls;
         sum_weight += weight;
     }
