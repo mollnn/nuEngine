@@ -21,14 +21,17 @@
 
 struct ShadowMapper
 {
-    const GLuint SHADOW_MAP_WIDTH = 2048, SHADOW_MAP_HEIGHT = 2048;
+    const GLuint SHADOW_MAP_WIDTH = 1024, SHADOW_MAP_HEIGHT = 1024;
     Shader shadow_shader;
     GLuint shadow_map_fbo;
-    GLuint shadow_map_texture;
+    GLuint depth_texture;
+    GLuint pos_texture;
+    GLuint normal_texture;
+    GLuint flux_texture;  // out flux
     float shadow_limit = 100.0;
 
     ShadowMapper();
-    void lightPass(glm::vec3 shadow_light_pos, Model *scene);
+    void lightPass(glm::vec3 shadow_light_pos,glm::vec3 shadow_light_int, Model *scene);
     void attach(Shader &shader);
 };
 

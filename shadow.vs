@@ -6,10 +6,15 @@ layout (location = 2) in vec2 aTex;
 uniform mat4 lvp;
 uniform mat4 model;
 
-out vec3 fragPos;
+out vec3 vPos;
+out vec3 vNormal;
+out vec2 vTex;
 
 void main()
 {
     gl_Position = lvp * model * vec4(aPos, 1.0f);
-    fragPos = (model * vec4(aPos, 1.0f)).xyz;
+    mat4 model_o = transpose(inverse(model));
+    vPos=(model * vec4(aPos, 1.0)).xyz;
+    vTex=aTex;
+    vNormal=(model_o*vec4(aNormal, 1.0)).xyz;
 }

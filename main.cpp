@@ -22,7 +22,7 @@
 bool key_status[512];
 float mouse_x, mouse_y;
 bool mouse_button_status[3];
-const int screen_x = 1280, screen_y = 720;
+const int screen_x = 640, screen_y = 360;
 
 void framesizeCallback(GLFWwindow *window, int width, int height)
 {
@@ -117,7 +117,7 @@ int main()
 
     Model scene;
     scene.addChildren(std::make_shared<Model>("mitsuba.obj"));
-    scene.addChildren(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-4.0f, 0.7f, 0.0f)));
+    scene.addChildren(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.7f, 0.0f)));
     Camera camera;
     camera.aspect = 1.0f * screen_x / screen_y;
     CameraControl cam_control;
@@ -142,6 +142,7 @@ int main()
         glm::vec3 sample(random_float(generator), random_float(generator), random_float(generator));
         sample = glm::normalize(sample);
         sample *= random_float(generator);
+        sample *= random_float(generator);
         ssao_kernel.push_back(sample);
     }
 
@@ -161,7 +162,7 @@ int main()
         scene.children[1].second = glm::rotate(scene.children[1].second, 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
 
         // GEN SHADOW
-        shadow_map_point_light.lightPass(lights[0].position, &scene);
+        shadow_map_point_light.lightPass(lights[0].position,lights[0].intensity, &scene);
 
         glViewport(0, 0, screen_x, screen_y);
 
@@ -172,7 +173,7 @@ int main()
         ssao_fbo.use();
         ssao_shader.use();
         ssao_shader.setCamera(camera);
-        for (int i = 0; i < 32; i++)
+        for (int i = 0; i < 64; i++)
         {
             ssao_shader.setUniform("ssao_kernel[" + std::to_string(i) + "]", ssao_kernel[i]);
         }
@@ -186,7 +187,10 @@ int main()
         lighting_shader.setLights(lights);
         lighting_shader.setCamera(camera);
         lighting_shader.setUniform("ambient", ambient_light_irradiance);
-
+        for (int i = 0; i < 64; i++)
+        {
+            lighting_shader.setUniform("rnd_kernel[" + std::to_string(i) + "]", ssao_kernel[i]);
+        }
         shadow_map_point_light.attach(lighting_shader);
         lighting_shader.setTexture("ao", &ssao_texture);
         deferred_renderer.drawLighting(lighting_shader);
