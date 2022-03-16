@@ -22,7 +22,7 @@
 bool key_status[512];
 float mouse_x, mouse_y;
 bool mouse_button_status[3];
-const int screen_x = 960, screen_y = 540;
+const int screen_x = 640, screen_y = 360;
 
 void framesizeCallback(GLFWwindow *window, int width, int height)
 {
@@ -86,8 +86,6 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
     return;
 }
 
-
-
 int main()
 {
     std::cout << "Nightup Engine v0.1" << std::endl;
@@ -115,6 +113,11 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
+    int maxVertexUniform, maxFragmentUniform;
+    glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &maxVertexUniform);
+    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &maxFragmentUniform);
+    std::cout << "Max Uniform " << maxVertexUniform << " " << maxFragmentUniform << std::endl;
+
     Model scene;
     scene.addChildren(std::make_shared<Model>("mitsuba.obj"));
     scene.addChildren(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.7f, 0.0f)));
@@ -133,17 +136,13 @@ int main()
     Shader ssao_shader("../ssao.vs", "../ssao.fs");
     Deferred deferred_renderer(screen_x, screen_y);
 
-    std::vector<glm::vec3> ssao_kernel;
-    std::normal_distribution<GLfloat> random_float(0.0, 1.0);
+    std::vector<float> rnds;
+    std::uniform_real_distribution<GLfloat> random_float(0.0, 1.0);
     std::default_random_engine generator;
 
-    for (int i = 0; i < 64; i++)
+    for (int i = 0; i < 1024; i++)
     {
-        glm::vec3 sample(random_float(generator), random_float(generator), random_float(generator));
-        sample = glm::normalize(sample);
-        sample *= random_float(generator);
-        sample *= random_float(generator);
-        ssao_kernel.push_back(sample);
+        rnds.push_back(random_float(generator));
     }
 
     Texture ssao_texture;
@@ -162,7 +161,7 @@ int main()
         scene.children[1].second = glm::rotate(scene.children[1].second, 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
 
         // GEN SHADOW
-        shadow_map_point_light.lightPass(lights[0].position,lights[0].intensity, &scene);
+        shadow_map_point_light.lightPass(lights[0].position, lights[0].intensity, &scene);
 
         glViewport(0, 0, screen_x, screen_y);
 
@@ -173,9 +172,9 @@ int main()
         ssao_fbo.use();
         ssao_shader.use();
         ssao_shader.setCamera(camera);
-        for (int i = 0; i < 64; i++)
+        for (int i = 0; i < 192; i++)
         {
-            ssao_shader.setUniform("ssao_kernel[" + std::to_string(i) + "]", ssao_kernel[i]);
+            ssao_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
         }
         deferred_renderer.drawLighting(ssao_shader);
 
@@ -187,9 +186,9 @@ int main()
         lighting_shader.setLights(lights);
         lighting_shader.setCamera(camera);
         lighting_shader.setUniform("ambient", ambient_light_irradiance);
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 32 * 3; i++)
         {
-            lighting_shader.setUniform("rnd_kernel[" + std::to_string(i) + "]", ssao_kernel[i]);
+            lighting_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
         }
         shadow_map_point_light.attach(lighting_shader);
         lighting_shader.setTexture("ao", &ssao_texture);
