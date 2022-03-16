@@ -12,7 +12,7 @@ uniform sampler2D gbuf4;
 uniform sampler2D gbuf5;
 uniform sampler2D ao;
 
-uniform vec3 rnd_kernel[64];
+uniform vec3 rnd_kernel[8];
 
 uniform samplerCube shadow_map;
 uniform samplerCube shadow_map_pos;
@@ -64,27 +64,41 @@ void main()
         color += (Ld + Ls) * vis;
     }
 
-    // color = vec3(0.0, 0.0, 0.0);
+    color = vec3(0.0, 0.0, 0.0);
 
     // RSM 
     vec3 rsm_contribution;
-    for(int i=0;i<64;i++)
+    float sum_weight=0;
+    for(int i=0;i<8;i++)
     {
         vec3 dp = vPos - point_light[0].pos;
-        vec3 dir = normalize(dp) + rnd_kernel[i] * 0.02;
+        vec3 bias = rnd_kernel[i];
+        vec3 dir = normalize(dp) + bias * 0.2;
         dir = normalize(dir);
 
         vec3 sample_pos = texture(shadow_map_pos, dir).xyz;
         vec3 sample_normal = normalize(texture(shadow_map_normal, dir).xyz);
         vec3 sample_flux = texture(shadow_map_flux, dir).xyz;
         vec3 normal = normalize(vNormal);
-        float dist2_bounce = dot(vPos - sample_pos,vPos - sample_pos);
+        float dist2_bounce = dot(vPos - sample_pos, vPos - sample_pos);
         vec3 dir_bounce = normalize(vPos - sample_pos);
         float dot1 = max(0.0, dot(sample_normal, dir_bounce));
         float dot2 = max(0.0, dot(normal, -dir_bounce));
-        vec3 E = sample_flux * dot1 * dot2 / dist2_bounce;
-        rsm_contribution += 1.0/64 * E;
+        vec3 E = sample_flux / 3.14159 * dot1 * dot2 / dist2_bounce;
+        float weight = dot(bias, bias);
+
+        vec3 Ei = 1.0/8.0 * E * weight;
+
+        vec3 Wi = -dir_bounce;
+        vec3 Wo = normalize(camera_pos-Ps);
+        vec3 h = normalize(Wi + Wo);
+        vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n));
+        vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns);
+
+        rsm_contribution += Ld + Ls;
+        sum_weight += weight;
     }
+    rsm_contribution *= 4 * 3.14159 / sum_weight;
     
     color += rsm_contribution;
 

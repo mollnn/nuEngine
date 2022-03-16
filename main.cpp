@@ -22,7 +22,7 @@
 bool key_status[512];
 float mouse_x, mouse_y;
 bool mouse_button_status[3];
-const int screen_x = 640, screen_y = 360;
+const int screen_x = 960, screen_y = 540;
 
 void framesizeCallback(GLFWwindow *window, int width, int height)
 {
@@ -187,7 +187,7 @@ int main()
         lighting_shader.setLights(lights);
         lighting_shader.setCamera(camera);
         lighting_shader.setUniform("ambient", ambient_light_irradiance);
-        for (int i = 0; i < 64; i++)
+        for (int i = 0; i < 8; i++)
         {
             lighting_shader.setUniform("rnd_kernel[" + std::to_string(i) + "]", ssao_kernel[i]);
         }
