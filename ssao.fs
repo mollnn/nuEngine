@@ -39,7 +39,7 @@ void main()
     {
         vec3 kernel = ssao_kernel[i];
         if(dot(kernel,vNormal)<0) kernel*=-1;
-        kernel *= 0.3;
+        kernel *= 0.5;
         vec3 sample_pos=vPos+kernel;
         vec4 sample_pos_ss = (projection*view*vec4(sample_pos,1.0));
         vec2 sample_xy = sample_pos_ss.xy/sample_pos_ss.w*0.5+0.5;
