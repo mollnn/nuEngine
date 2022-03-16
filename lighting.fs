@@ -16,6 +16,7 @@ uniform samplerCube shadow_map;
 uniform float shadowLimit;
 
 uniform vec3 ambient;
+uniform vec3 camera_pos;
 
 struct PointLight 
 {
@@ -43,8 +44,10 @@ void main()
         vec3 Pl = point_light[i].pos;
         vec3 Ei = point_light[i].val / dot(Pl-Ps, Pl-Ps);
         vec3 Wi = normalize(Pl-Ps);
+        vec3 Wo = normalize(camera_pos-Ps);
         vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n));
-        vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(Wi, n)), Ns);
+        vec3 h = normalize(Wi + Wo);
+        vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns);
         float vis = 1.0;
         if(i==0)
         {

@@ -184,6 +184,7 @@ int main()
 
         lighting_shader.use();
         lighting_shader.setLights(lights);
+        lighting_shader.setCamera(camera);
         lighting_shader.setUniform("ambient", ambient_light_irradiance);
 
         shadow_map_point_light.attach(lighting_shader);

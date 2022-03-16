@@ -113,6 +113,7 @@ void Shader::setMVP(const glm::mat4 &view, const glm::mat4 &projection)
 void Shader::setCamera(const Camera &camera)
 {
     setMVP(camera.view, camera.projection);
+    setUniform("camera_pos", camera.cam_pos);
 }
 
 GLuint Shader::id()
