@@ -84,8 +84,8 @@ void main()
     // RSM 
     vec3 rsm_contribution = vec3(0.0,0.0,0.0);
     float sum_weight=0;
-    for(int j=0;j<4;j++)
-    for(int i=0;i<47;i++)
+    for(int j=0;j<1;j++)
+    for(int i=0;i<32;i++)
     {
         vec3 dp = normalize(vPos - point_light[0].pos);
         vec3 bias = rndPseudoGaussian(rnds[i*4+j]) *

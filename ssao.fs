@@ -42,7 +42,7 @@ void main()
     vec3 vNormal = texture(gbuf1, vTex).xyz;
 
     float occ=1;
-    for(int i=0;i<64;i++)
+    for(int i=0;i<32;i++)
     {
         vec3 kernel = vec3(rndPseudoGaussian(rnds[i*3]), rndPseudoGaussian(rnds[i*3+1]), rndPseudoGaussian(rnds[i*3+2]));
         if(dot(kernel,vNormal)<0) kernel*=-1;
@@ -54,7 +54,7 @@ void main()
         float sample_z = sample_pos_ss.z/sample_pos_ss.w;
         if(sample_d<sample_z)
         {
-            occ-=1.0/64;
+            occ-=1.0/32;
         }
     }
 

@@ -86,6 +86,49 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action, int mods)
     return;
 }
 
+class Profiler
+{
+    std::vector<double> move_avg;
+    double frame_start, last_tick;
+    int idx;
+
+public:
+    void begin()
+    {
+        frame_start = glfwGetTime();
+        last_tick = frame_start;
+        std::cout << "PROFILER BEGIN" << std::endl;
+        idx = 0;
+    }
+
+    void tick(const std::string &msg = "")
+    {
+        glFinish();
+        double t = glfwGetTime();
+        if (move_avg.size() <= idx)
+        {
+            move_avg.push_back(t - last_tick);
+        }
+        else
+        {
+            double alpha = 0.9;
+            move_avg[idx] *= alpha;
+            move_avg[idx] += (1 - alpha) * (t - last_tick);
+        }
+        std::cout << "PROFILER TICK " << msg << ":   \t" << t - last_tick << ", \t" << t - frame_start << "  \tavg " << move_avg[idx] << std::endl;
+        idx++;
+        last_tick = t;
+    }
+
+    void end()
+    {
+        double t = glfwGetTime();
+        std::cout << "PROFILER END"
+                  << ": \t" << t - last_tick << ",   \t" << t - frame_start << std::endl
+                  << std::endl;
+    }
+};
+
 int main()
 {
     std::cout << "Nightup Engine v0.1" << std::endl;
@@ -151,11 +194,12 @@ int main()
 
     // std::vector<PointLight> lights = {PointLight(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.5f, 0.0f))};
 
-    std::vector<PointLight> lights = {PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 10.0f, 0.0f)),
+    std::vector<PointLight> lights = {PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 15.0f, 0.0f)),
                                       PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))};
 
-    glm::vec3 ambient_light_irradiance(0.3f, 0.3f, 0.3f);
-    ambient_light_irradiance *= 0.0;
+    glm::vec3 ambient_light_irradiance(0.2f, 0.2f, 0.2f);
+
+    Profiler profiler;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -164,23 +208,31 @@ int main()
 
         scene.children[1].second = glm::rotate(scene.children[1].second, 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
 
+        profiler.begin();
+
         // GEN SHADOW
         shadow_map_point_light.lightPass(lights[0].position, lights[0].intensity, &scene);
+
+        profiler.tick("shadow");
 
         glViewport(0, 0, screen_x, screen_y);
 
         // GEOMETRY STAGE
         deferred_renderer.drawGeometry(&scene, camera);
 
+        profiler.tick("geometry");
+
         // SSAO STAGE
         ssao_fbo.use();
         ssao_shader.use();
         ssao_shader.setCamera(camera);
-        for (int i = 0; i < 192; i++)
+        for (int i = 0; i < 128; i++)
         {
             ssao_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
         }
         deferred_renderer.drawLighting(ssao_shader);
+
+        profiler.tick("ssao.ao");
 
         // LIGHTING STAGE
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -190,7 +242,7 @@ int main()
         lighting_shader.setLights(lights);
         lighting_shader.setCamera(camera);
         lighting_shader.setUniform("ambient", ambient_light_irradiance);
-        for (int i = 0; i < 192; i++)
+        for (int i = 0; i < 128; i++)
         {
             lighting_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
         }
@@ -198,7 +250,11 @@ int main()
         lighting_shader.setTexture("ao", &ssao_texture);
         deferred_renderer.drawLighting(lighting_shader);
 
+        profiler.tick("lighting");
+
         glfwSwapBuffers(window);
+
+        profiler.end();
     }
 
     glfwTerminate();
