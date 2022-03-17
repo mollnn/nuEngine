@@ -40,6 +40,13 @@ float rndPseudoGaussian(float alpha)
     return y;
 }
 
+float rndUniform(float alpha)
+{
+    float x=2*alpha-1;
+    float y=x;
+    return y;
+}
+
 
 void main()
 {
@@ -74,30 +81,27 @@ void main()
         color += (Ld + Ls) * vis;
     }
 
-    color = vec3(0.0, 0.0, 0.0);
-
     // RSM 
     vec3 rsm_contribution = vec3(0.0,0.0,0.0);
     float sum_weight=0;
-    for(int j=0;j<1;j++)
+    for(int j=0;j<4;j++)
     for(int i=0;i<47;i++)
     {
-        vec3 dp = vPos - point_light[0].pos;
+        vec3 dp = normalize(vPos - point_light[0].pos);
         vec3 bias = rndPseudoGaussian(rnds[i*4+j]) *
             normalize(vec3(rndPseudoGaussian(rnds[i*4+1+j]), rndPseudoGaussian(rnds[i*4+2+j]), rndPseudoGaussian(rnds[i*4+3+j])));
-        vec3 dir = normalize(dp) + bias * 3.0;
+        vec3 dir = dp + bias * 3.0;
         dir = normalize(dir);
+        float weight = min(1.0, dot(dir-dp, dir-dp));
         vec3 sample_pos = texture(shadow_map_pos, dir).xyz;
-        vec3 sample_normal = normalize(texture(shadow_map_normal, dir).xyz);
+        vec3 sample_normal = texture(shadow_map_normal, dir).xyz;
         vec3 sample_flux = texture(shadow_map_flux, dir).xyz;
         vec3 normal = normalize(vNormal);
-        if(dot(sample_normal, normal)>0.5) continue;
         float dist2_bounce = dot(vPos - sample_pos, vPos - sample_pos) + 1e-4;
         vec3 dir_bounce = normalize(vPos - sample_pos);
         float dot1 = max(0.0, dot(sample_normal, dir_bounce));
         float dot2 = max(0.0, dot(normal, -dir_bounce));
         vec3 E = sample_flux / 3.14159 * dot1 * 1.0 / dist2_bounce;
-        float weight = dot(bias, bias);
         vec3 Ei = E * weight;
         vec3 Wi = -dir_bounce;
         vec3 Wo = normalize(camera_pos-Ps);

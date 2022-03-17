@@ -32,7 +32,7 @@ void main()
     vec3 Ei = lightInt / dot(Pl-Ps, Pl-Ps);
     vec3 Wi = normalize(Pl - Ps);
     vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n));
-    float A = 1.0 / dot(Pl-Ps, Pl-Ps) / max(1e-6, dot(Wi, n));   // w0 is eliminated
+    float A = 1.0 * dot(Pl-Ps, Pl-Ps) / max(1e-6, dot(Wi, n));   // w0 is eliminated
     vec3 Phi = Ld * 3.14159 * A;
 
     gFlux = Phi;

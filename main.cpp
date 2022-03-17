@@ -119,9 +119,9 @@ int main()
     std::cout << "Max Uniform " << maxVertexUniform << " " << maxFragmentUniform << std::endl;
 
     Model scene;
-    scene.addChildren(std::make_shared<Model>("CornellBox-Mirror.obj"));
-    // scene.addChildren(std::make_shared<Model>("mitsuba.obj"));
-    // scene.addChildren(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.7f, 0.0f)));
+    // scene.addChildren(std::make_shared<Model>("CornellBox-Mirror.obj"));
+    scene.addChildren(std::make_shared<Model>("mitsuba.obj"));
+    scene.addChildren(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.7f, 0.0f)));
     Camera camera;
     camera.aspect = 1.0f * screen_x / screen_y;
     CameraControl cam_control;
@@ -149,10 +149,10 @@ int main()
     Texture ssao_texture;
     FramebufferObject ssao_fbo({&ssao_texture}, screen_x, screen_y);
 
-    std::vector<PointLight> lights = {PointLight(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f, 1.5f, 0.0f))};
+    // std::vector<PointLight> lights = {PointLight(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.5f, 0.0f))};
 
-    // std::vector<PointLight> lights = {PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 10.0f, 0.0f)),
-    //                                   PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))};
+    std::vector<PointLight> lights = {PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 10.0f, 0.0f)),
+                                      PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))};
 
     glm::vec3 ambient_light_irradiance(0.3f, 0.3f, 0.3f);
     ambient_light_irradiance *= 0.0;
