@@ -5,24 +5,25 @@ ShadowMapper::ShadowMapper() : shadow_shader("../shadow.vs", "../shadow.fs")
     glGenFramebuffers(1, &shadow_map_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_fbo);
 
-    auto makeCubemap = [&](GLuint &id, GLuint component)
+    auto makeCubemap = [&](GLuint &id, GLuint intformat, GLuint component)
     {
         glGenTextures(1, &id);
         glBindTexture(GL_TEXTURE_CUBE_MAP, id);
         for (int i = 0; i < 6; i++)
-            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, component, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, component, GL_FLOAT, NULL);
+            glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, intformat, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, 0, component, GL_FLOAT, NULL);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         GLfloat texture_border_color[] = {1.0, 1.0, 1.0, 1.0};
         glTexParameterfv(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BORDER_COLOR, texture_border_color);
+        glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     };
 
-    makeCubemap(depth_texture, GL_DEPTH_COMPONENT);
-    makeCubemap(pos_texture, GL_RGB);
-    makeCubemap(normal_texture, GL_RGB);
-    makeCubemap(flux_texture, GL_RGB);
+    makeCubemap(depth_texture, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT);
+    makeCubemap(pos_texture, GL_RGB16F, GL_RGB);
+    makeCubemap(normal_texture, GL_RGB16F, GL_RGB);
+    makeCubemap(flux_texture, GL_RGB16F, GL_RGB);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

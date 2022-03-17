@@ -155,6 +155,7 @@ int main()
     //                                   PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))};
 
     glm::vec3 ambient_light_irradiance(0.3f, 0.3f, 0.3f);
+    ambient_light_irradiance *= 0.0;
 
     while (!glfwWindowShouldClose(window))
     {
@@ -189,7 +190,7 @@ int main()
         lighting_shader.setLights(lights);
         lighting_shader.setCamera(camera);
         lighting_shader.setUniform("ambient", ambient_light_irradiance);
-        for (int i = 0; i < 32 * 3; i++)
+        for (int i = 0; i < 192; i++)
         {
             lighting_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
         }

@@ -20,6 +20,7 @@ void main()
     gl_FragDepth = lightDist;
     gPos = vPos;
     gNormal = vNormal;
+    // if(length(vNormal)<0.1) gNormal=vec3(1.0,0.0,0.0);
 
     vec3 n = vNormal;
 
@@ -34,5 +35,5 @@ void main()
     float A = 1.0 / dot(Pl-Ps, Pl-Ps) / max(1e-6, dot(Wi, n));   // w0 is eliminated
     vec3 Phi = Ld * 3.14159 * A;
 
-    gFlux = Ld;
+    gFlux = Phi;
 }

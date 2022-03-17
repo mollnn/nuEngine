@@ -52,7 +52,7 @@ void main()
 
     vec3 color = ambient * Ka * (texture(ao, vTex).r);
     vec3 Ps = vPos;
-    vec3 n = vNormal;
+    vec3 n = normalize(vNormal);
     for(int i=0;i<n_point_light;i++)
     {
         vec3 Pl = point_light[i].pos;
@@ -79,22 +79,24 @@ void main()
     // RSM 
     vec3 rsm_contribution = vec3(0.0,0.0,0.0);
     float sum_weight=0;
-    for(int i=0;i<32;i++)
+    for(int j=0;j<1;j++)
+    for(int i=0;i<47;i++)
     {
         vec3 dp = vPos - point_light[0].pos;
-        vec3 bias = vec3(rndPseudoGaussian(rnds[i*3]), rndPseudoGaussian(rnds[i*3+1]), rndPseudoGaussian(rnds[i*3+2]));
-        vec3 dir = normalize(dp) + bias * 0.3;
+        vec3 bias = rndPseudoGaussian(rnds[i*4+j]) *
+            normalize(vec3(rndPseudoGaussian(rnds[i*4+1+j]), rndPseudoGaussian(rnds[i*4+2+j]), rndPseudoGaussian(rnds[i*4+3+j])));
+        vec3 dir = normalize(dp) + bias * 3.0;
         dir = normalize(dir);
-
         vec3 sample_pos = texture(shadow_map_pos, dir).xyz;
         vec3 sample_normal = normalize(texture(shadow_map_normal, dir).xyz);
         vec3 sample_flux = texture(shadow_map_flux, dir).xyz;
         vec3 normal = normalize(vNormal);
-        float dist2_bounce = dot(vPos - sample_pos, vPos - sample_pos);
+        if(dot(sample_normal, normal)>0.5) continue;
+        float dist2_bounce = dot(vPos - sample_pos, vPos - sample_pos) + 1e-4;
         vec3 dir_bounce = normalize(vPos - sample_pos);
         float dot1 = max(0.0, dot(sample_normal, dir_bounce));
         float dot2 = max(0.0, dot(normal, -dir_bounce));
-        vec3 E = sample_flux / 3.14159 * dot1 * dot2 / dist2_bounce;
+        vec3 E = sample_flux / 3.14159 * dot1 * 1.0 / dist2_bounce;
         float weight = dot(bias, bias);
         vec3 Ei = E * weight;
         vec3 Wi = -dir_bounce;
