@@ -70,13 +70,23 @@ void main()
         vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
         vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns)  * (dot(Wo, n) > 0 ? 1.0 : 0.0);
         float vis = 1.0;
+        const int N_SAMPLE = 64;
         if(i==0)
         {
-            vec3 dp = vPos - point_light[0].pos;
-            float d0 = texture(shadow_map, dp).r * shadowLimit;
+            vec3 dp = (vPos - point_light[0].pos);
             float d = length(dp);
+            dp = normalize(dp);
             float shadow_bias = max(0.2 * (1.0 - dot(Wi, n)), 0.02);
-            vis = d- d0 > shadow_bias ? 0.0 : 1.0;
+            for(int j=0;j<N_SAMPLE;j++)
+            {
+                float r = (rndUniform(rnds[2*j]));
+                float rx = rndPseudoGaussian(rnds[2*j+1]);
+                float ry = rndPseudoGaussian(rnds[2*j+2]);
+                float rz = rndPseudoGaussian(rnds[2*j+3]);
+                vec3 offset = r * normalize(vec3(rx, ry, rz)) * 0.01;
+                float d0 = texture(shadow_map, dp + offset).r * shadowLimit;
+                if(d - d0 > shadow_bias) vis -= 1.0 / N_SAMPLE;
+            }
         }
 
         color += (Ld + Ls) * vis;
