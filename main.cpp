@@ -196,7 +196,7 @@ int main()
 
     // std::vector<PointLight> lights = {PointLight(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.5f, 0.0f))};
 
-    std::vector<PointLight> lights = {PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-10.0f, 15.0f, 0.0f)),
+    std::vector<PointLight> lights = {PointLight(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-15.0f, 10.0f, 0.0f)),
                                       PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))};
 
     glm::vec3 ambient_light_irradiance(0.2f, 0.2f, 0.2f);

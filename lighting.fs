@@ -73,20 +73,36 @@ void main()
         const int N_SAMPLE = 64;
         if(i==0)
         {
-            vec3 dp = (vPos - point_light[0].pos);
-            float d = length(dp);
-            dp = normalize(dp);
-            float shadow_bias = max(0.2 * (1.0 - dot(Wi, n)), 0.02);
+            vec3 d_receiver = (vPos - point_light[0].pos);
+            float dist_receiver = length(d_receiver);
+            vec3 dir_receiver = normalize(d_receiver);
+            float dist_blocker = 0.0;
+            float light_width = 10; // todo
+            float blocker_search_radius = light_width / dist_receiver / 2;
             for(int j=0;j<N_SAMPLE;j++)
             {
                 float r = (rndUniform(rnds[2*j]));
                 float rx = rndPseudoGaussian(rnds[2*j+1]);
                 float ry = rndPseudoGaussian(rnds[2*j+2]);
                 float rz = rndPseudoGaussian(rnds[2*j+3]);
-                vec3 offset = r * normalize(vec3(rx, ry, rz)) * 0.01;
-                float d0 = texture(shadow_map, dp + offset).r * shadowLimit;
-                if(d - d0 > shadow_bias) vis -= 1.0 / N_SAMPLE;
+                vec3 offset = r * normalize(vec3(rx, ry, rz)) * blocker_search_radius;
+                float d0 = texture(shadow_map, dir_receiver + offset).r * shadowLimit;
+                dist_blocker += min(d0, dist_receiver);
             }
+            dist_blocker /= N_SAMPLE;
+            float shadow_radius = (dist_receiver - dist_blocker) / dist_receiver / dist_blocker * light_width;
+            float shadow_bias = max(0.1 * (1.0 - dot(Wi, n)), 0.01);
+            for(int j=0;j<N_SAMPLE;j++)
+            {
+                float r = (rndUniform(rnds[2*j]));
+                float rx = rndPseudoGaussian(rnds[2*j+1]);
+                float ry = rndPseudoGaussian(rnds[2*j+2]);
+                float rz = rndPseudoGaussian(rnds[2*j+3]);
+                vec3 offset = r * normalize(vec3(rx, ry, rz)) * shadow_radius;
+                float d0 = texture(shadow_map, dir_receiver + offset).r * shadowLimit;
+                if(dist_receiver - d0 > shadow_bias) vis -= 1.0 / N_SAMPLE;
+            }
+            // color += ((dist_receiver - dist_blocker)) * vec3(1.0, 0.0, 0.0);
         }
 
         color += (Ld + Ls) * vis;
@@ -98,12 +114,12 @@ void main()
     for(int j=0;j<1;j++)
     for(int i=0;i<32;i++)
     {
-        vec3 dp = normalize(vPos - point_light[0].pos);
+        vec3 dist_receiver = normalize(vPos - point_light[0].pos);
         vec3 bias = rndPseudoGaussian(rnds[i*4+j]) *
             normalize(vec3(rndPseudoGaussian(rnds[i*4+1+j]), rndPseudoGaussian(rnds[i*4+2+j]), rndPseudoGaussian(rnds[i*4+3+j])));
-        vec3 dir = dp + bias * 3.0;
+        vec3 dir = dist_receiver + bias * 3.0;
         dir = normalize(dir);
-        float weight = min(1.0, dot(dir-dp, dir-dp));
+        float weight = min(1.0, dot(dir-dist_receiver, dir-dist_receiver));
         vec3 sample_pos = texture(shadow_map_pos, dir).xyz;
         vec3 sample_normal = texture(shadow_map_normal, dir).xyz;
         vec3 sample_flux = texture(shadow_map_flux, dir).xyz;
