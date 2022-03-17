@@ -75,7 +75,8 @@ void main()
             vec3 dp = vPos - point_light[0].pos;
             float d0 = texture(shadow_map, dp).r * shadowLimit;
             float d = length(dp);
-            vis = d- d0 > 0.05 ? 0.0 : 1.0;
+            float shadow_bias = max(0.2 * (1.0 - dot(Wi, n)), 0.02);
+            vis = d- d0 > shadow_bias ? 0.0 : 1.0;
         }
 
         color += (Ld + Ls) * vis;

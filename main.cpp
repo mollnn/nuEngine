@@ -91,6 +91,8 @@ class Profiler
     std::vector<double> move_avg;
     double frame_start, last_tick;
     int idx;
+    double alpha = 0.5;
+    double beta = 0.8;
 
 public:
     void begin()
@@ -111,7 +113,6 @@ public:
         }
         else
         {
-            double alpha = 0.9;
             move_avg[idx] *= alpha;
             move_avg[idx] += (1 - alpha) * (t - last_tick);
         }
@@ -126,6 +127,7 @@ public:
         std::cout << "PROFILER END"
                   << ": \t" << t - last_tick << ",   \t" << t - frame_start << std::endl
                   << std::endl;
+        alpha = 1 - (1 - alpha) * beta;
     }
 };
 
