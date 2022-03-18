@@ -140,6 +140,6 @@ void main()
     }
     rsm_contribution *= 4 * 3.14159 / sum_weight;
     color += rsm_contribution;
-
+    // color = texture(ao, vTex).rgb;
     FragColor = vec4(color, 1.0);
 }

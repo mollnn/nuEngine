@@ -114,6 +114,8 @@ void Shader::setCamera(const Camera &camera)
 {
     setMVP(camera.view, camera.projection);
     setUniform("camera_pos", camera.cam_pos);
+    setUniform("near", camera.near);
+    setUniform("far", camera.far);
 }
 
 GLuint Shader::id()

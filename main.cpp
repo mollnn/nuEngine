@@ -191,6 +191,16 @@ int main()
         rnds.push_back(random_float(generator));
     }
 
+    std::vector<glm::vec3> ssao_noise;
+    for (GLuint i = 0; i < 64; i++)
+    {
+        glm::vec3 noise(
+            random_float(generator) * 2.0 - 1.0,
+            random_float(generator) * 2.0 - 1.0,
+            random_float(generator) * 2.0 - 1.0);
+        ssao_noise.push_back(noise);
+    }
+
     Texture ssao_texture;
     FramebufferObject ssao_fbo({&ssao_texture}, screen_x, screen_y);
 
@@ -228,6 +238,8 @@ int main()
         ssao_fbo.use();
         ssao_shader.use();
         ssao_shader.setCamera(camera);
+        ssao_shader.setUniformi("noise_tex", 16);
+
         for (int i = 0; i < 128; i++)
         {
             ssao_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
