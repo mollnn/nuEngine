@@ -34,10 +34,33 @@ GLuint Texture::loadTexture(const std::string &tex_name)
     return tex;
 }
 
+GLuint Texture::loadTexture(int width, int height, const unsigned char* data)
+{
+    int sx, sy;
+
+    GLuint tex;
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sx, sy, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    return tex;
+}
+
 Texture::Texture(const std::string &tex_name)
 {
     handle_ = loadTexture(tex_name);
     filename_ = tex_name;
+}
+
+Texture::Texture(int width, int height, const unsigned char* data)
+{
+    handle_ = loadTexture(width, height, data);
 }
 
 void Texture::use(int unit_id)

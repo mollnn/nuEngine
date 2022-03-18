@@ -10,6 +10,7 @@ uniform sampler2D gbuf2;
 uniform sampler2D gbuf3;
 uniform sampler2D gbuf4;
 uniform sampler2D gbuf5;
+uniform sampler2D screen_rnd_tex;
 
 uniform float near;
 uniform float far;
@@ -55,7 +56,7 @@ void main()
     int scrx = int(vTex.x * 640);
     int scry = int(vTex.y * 360);
     int scrid = (scrx % 16) * 16 + scry % 16;
-    float scrrnd = rnds[scrid];
+    float scrrnd = texture(screen_rnd_tex, vTex).x;
 
     for(int i=0;i<N_SAMPLE;i++)
     {

@@ -11,6 +11,7 @@ uniform sampler2D gbuf3;
 uniform sampler2D gbuf4;
 uniform sampler2D gbuf5;
 uniform sampler2D film;
+uniform sampler2D screen_rnd_tex;
 
 uniform float rnds[1024];
 
@@ -21,6 +22,8 @@ uniform mat4 view;
 uniform mat4 projection;
 uniform float near;
 uniform float far;
+
+
 
 float rndPseudoGaussian(float alpha)
 {
@@ -53,9 +56,9 @@ vec3 worldToScreen(vec3 w)
 vec3 intersection(vec3 o, vec3 d)
 {
     float s=0.01;
-    float a=0.01;
+    float a=0.001;
     vec3 p=o;
-    for(int i=0;i<32;i++)
+    for(int i=0;i<64;i++)
     {
         p+=d*s;
         s+=a;
@@ -80,10 +83,7 @@ void main()
     vec3 Ks = texture(gbuf4, vTex).xyz;
     float Ns = texture(gbuf5, vTex).x;
     
-    int scrx = int(vTex.x * 640);
-    int scry = int(vTex.y * 360);
-    int scrid = (scrx % 16) * 16 + scry % 16;
-    float scrrnd = rnds[scrid];
+    float scrrnd = texture(screen_rnd_tex, vTex).x;
 
     vec3 color = texture(film, vTex.xy).xyz;
 
@@ -132,6 +132,5 @@ void main()
         // float cursor_depth = p_screen.z * 2 - 1;
         // float record_depth = texture(gbuf0, p_screen.xy).a;
         // color = vec3(cursor_depth, record_depth, cursor_depth) * 0.5+0.5;
-
     FragColor = vec4(color, 1.0);
 }

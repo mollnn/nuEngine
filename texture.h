@@ -14,9 +14,11 @@ class Texture
     std::string filename_;
 
     static GLuint loadTexture(const std::string &tex_name);
+    static GLuint loadTexture(int width, int height, const unsigned char* data);
 
 public:
     Texture(const std::string &tex_name = "");
+    Texture(int width, int height, const unsigned char* data);
 
     void use(int unit_id);
     int id();

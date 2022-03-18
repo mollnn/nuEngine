@@ -191,6 +191,25 @@ int main()
         rnds.push_back(random_float(generator));
     }
 
+    std::vector<float> screen_rnd;
+    for (int i = 0; i < screen_x*screen_y*3; i++)
+    {
+        screen_rnd.push_back(random_float(generator));
+    } 
+
+    GLuint screen_rnd_tex;
+    glGenTextures(1, &screen_rnd_tex);
+    glBindTexture(GL_TEXTURE_2D, screen_rnd_tex);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, screen_x, screen_y, 0, GL_RGB, GL_FLOAT, screen_rnd.data());
+
+
+
     Texture ssao_texture;
     FramebufferObject ssao_fbo({&ssao_texture}, screen_x, screen_y);
 
@@ -213,6 +232,9 @@ int main()
         glfwPollEvents();
         cam_control.onEvents();
 
+        glActiveTexture(GL_TEXTURE17);
+        glBindTexture(GL_TEXTURE_2D, screen_rnd_tex);
+
         scene.children[1].second = glm::rotate(scene.children[1].second, 0.01f, glm::vec3(0.0f, 1.0f, 0.0f));
 
         profiler.begin();
@@ -233,6 +255,7 @@ int main()
         ssao_fbo.use();
         ssao_shader.use();
         ssao_shader.setCamera(camera);
+        ssao_shader.setUniformi("screen_rnd_tex", 17);
 
         for (int i = 0; i < 256; i++)
         {
@@ -247,6 +270,7 @@ int main()
         lighting_shader.use();
         lighting_shader.setLights(lights);
         lighting_shader.setCamera(camera);
+        lighting_shader.setUniformi("screen_rnd_tex", 17);
         lighting_shader.setUniform("ambient", ambient_light_irradiance);
         for (int i = 0; i < 256; i++)
         {
@@ -264,6 +288,8 @@ int main()
         ssr_shader.use();
         ssr_shader.setCamera(camera);
         ssr_shader.setTexture("film", &film_tex);
+        ssr_shader.setUniformi("screen_rnd_tex", 17);
+
         for (int i = 0; i < 256; i++)
         {
             ssr_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
