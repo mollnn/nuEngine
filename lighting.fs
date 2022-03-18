@@ -56,6 +56,11 @@ void main()
     vec3 Kd = texture(gbuf3, vTex).xyz;
     vec3 Ks = texture(gbuf4, vTex).xyz;
     float Ns = texture(gbuf5, vTex).x;
+    
+    int scrx = int(vTex.x * 640);
+    int scry = int(vTex.y * 360);
+    int scrid = (scrx % 16) * 16 + scry % 16;
+    float scrrnd = rnds[scrid];
 
     vec3 color = ambient * Ka * (texture(ao, vTex).r);
     vec3 Ps = vPos;
@@ -70,41 +75,62 @@ void main()
         vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
         vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns)  * (dot(Wo, n) > 0 ? 1.0 : 0.0);
         float vis = 1.0;
-        const int N_SAMPLE = 64;
         if(i==0)
         {
+            const int N_SAMPLE = 64;
+            float shadow_bias = max(0.3 * (1.0 - dot(Wi, n)), 0.03);
             vec3 d_receiver = (vPos - point_light[0].pos);
             float dist_receiver = length(d_receiver);
             vec3 dir_receiver = normalize(d_receiver);
             float dist_blocker = 0.0;
-            float light_width = 10; // todo
-            float blocker_search_radius = light_width / dist_receiver / 2;
+            float n_count = 0.0;
+            float light_width = 3; // todo
+            // float blocker_search_radius = light_width / dist_receiver / 2;
+            float blocker_search_radius = 0.02;
             for(int j=0;j<N_SAMPLE;j++)
             {
-                float r = (rndUniform(rnds[2*j]));
-                float rx = rndPseudoGaussian(rnds[2*j+1]);
-                float ry = rndPseudoGaussian(rnds[2*j+2]);
-                float rz = rndPseudoGaussian(rnds[2*j+3]);
-                vec3 offset = r * normalize(vec3(rx, ry, rz)) * blocker_search_radius;
+                // float r = (rndUniform(rnds[2*j]));
+                // float rx = rndPseudoGaussian(rnds[2*j+1]);
+                // float ry = rndPseudoGaussian(rnds[2*j+2]);
+                // float rz = rndPseudoGaussian(rnds[2*j+3]);
+                // vec3 offset = r * normalize(vec3(rx, ry, rz)) * blocker_search_radius;
+                float phi = rnds[j*2] * 3.14159 * 2;
+                phi += scrrnd * 3.14159 * 2;
+                float r = pow(rnds[j*2+1], 1);
+                vec3 n = normalize(dir_receiver);
+                vec3 t = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
+                vec3 b = cross(n, t);
+                vec3 offset = r * (cos(phi)*t + sin(phi)*b) * blocker_search_radius;
                 float d0 = texture(shadow_map, dir_receiver + offset).r * shadowLimit;
-                dist_blocker += min(d0, dist_receiver);
+                if(dist_receiver - d0 > shadow_bias)
+                {
+                    dist_blocker += d0;
+                    n_count += 1.0;
+                }
             }
-            dist_blocker /= N_SAMPLE;
+            n_count += 1e-6;
+            dist_blocker += 1e-6 * dist_receiver;
+            dist_blocker /= n_count;
             float shadow_radius = (dist_receiver - dist_blocker) / dist_receiver / dist_blocker * light_width;
-            float shadow_bias = max(0.1 * (1.0 - dot(Wi, n)), 0.01);
             for(int j=0;j<N_SAMPLE;j++)
             {
-                float r = (rndUniform(rnds[2*j]));
-                float rx = rndPseudoGaussian(rnds[2*j+1]);
-                float ry = rndPseudoGaussian(rnds[2*j+2]);
-                float rz = rndPseudoGaussian(rnds[2*j+3]);
-                vec3 offset = r * normalize(vec3(rx, ry, rz)) * shadow_radius;
+                // float r = (rndUniform(rnds[2*j]));
+                // float rx = rndPseudoGaussian(rnds[2*j+1]);
+                // float ry = rndPseudoGaussian(rnds[2*j+2]);
+                // float rz = rndPseudoGaussian(rnds[2*j+3]);
+                // vec3 offset = r * normalize(vec3(rx, ry, rz)) * shadow_radius;
+                float phi = rnds[j*2] * 3.14159 * 2;
+                phi += scrrnd * 3.14159 * 2;
+                float r = pow(rnds[j*2+1], 1);
+                vec3 n = normalize(dir_receiver);
+                vec3 t = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
+                vec3 b = cross(n, t);
+                vec3 offset = r * (cos(phi)*t + sin(phi)*b) * shadow_radius;
                 float d0 = texture(shadow_map, dir_receiver + offset).r * shadowLimit;
                 if(dist_receiver - d0 > shadow_bias) vis -= 1.0 / N_SAMPLE;
             }
             // color += ((dist_receiver - dist_blocker)) * vec3(1.0, 0.0, 0.0);
         }
-
         color += (Ld + Ls) * vis;
     }
 
@@ -112,11 +138,21 @@ void main()
     vec3 rsm_contribution = vec3(0.0,0.0,0.0);
     float sum_weight=0;
     for(int j=0;j<1;j++)
-    for(int i=0;i<32;i++)
+    for(int i=0;i<64;i++)
     {
         vec3 dist_receiver = normalize(vPos - point_light[0].pos);
-        vec3 bias = rndPseudoGaussian(rnds[i*4+j]) *
-            normalize(vec3(rndPseudoGaussian(rnds[i*4+1+j]), rndPseudoGaussian(rnds[i*4+2+j]), rndPseudoGaussian(rnds[i*4+3+j])));
+        // vec3 bias = rndPseudoGaussian(rnds[i*4+j]) *
+        //     normalize(vec3(rndPseudoGaussian(rnds[i*4+1+j]), rndPseudoGaussian(rnds[i*4+2+j]), rndPseudoGaussian(rnds[i*4+3+j])));
+        float cos_theta = rnds[i*3] * 2 - 1;
+        float sin_theta = sqrt(1-cos_theta*cos_theta);
+        float phi = rnds[i*3+1] * 3.14159 * 2;
+        phi += scrrnd * 3.14159 * 2;
+        float r = rndPseudoGaussian(rnds[i*3+2]);
+        vec3 n = normalize(vec3(1.0));
+        vec3 t = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
+        vec3 b = cross(n, t);
+        vec3 bias = r * (sin_theta*cos(phi)*t + sin_theta*sin(phi)*b + cos_theta*n);
+
         vec3 dir = dist_receiver + bias * 3.0;
         dir = normalize(dir);
         float weight = min(1.0, dot(dir-dist_receiver, dir-dist_receiver));
@@ -140,6 +176,5 @@ void main()
     }
     rsm_contribution *= 4 * 3.14159 / sum_weight;
     color += rsm_contribution;
-    // color = texture(ao, vTex).rgb;
     FragColor = vec4(color, 1.0);
 }
