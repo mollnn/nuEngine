@@ -208,8 +208,6 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, screen_x, screen_y, 0, GL_RGB, GL_FLOAT, screen_rnd.data());
 
-
-
     Texture ssao_texture;
     FramebufferObject ssao_fbo({&ssao_texture}, screen_x, screen_y);
 
@@ -241,14 +239,12 @@ int main()
 
         // GEN SHADOW
         shadow_map_point_light.lightPass(lights[0].position, lights[0].intensity, &scene);
-
         profiler.tick("shadow");
 
         glViewport(0, 0, screen_x, screen_y);
 
         // GEOMETRY STAGE
         deferred_renderer.drawGeometry(&scene, camera);
-
         profiler.tick("geometry");
 
         // SSAO STAGE

@@ -24,7 +24,6 @@ uniform float near;
 uniform float far;
 
 
-
 float rndPseudoGaussian(float alpha)
 {
     float x=2*alpha-1;
@@ -56,18 +55,23 @@ vec3 worldToScreen(vec3 w)
 vec3 intersection(vec3 o, vec3 d)
 {
     float s=0.01;
-    float a=0.005;
+    float a=0.001;
     vec3 p=o;
-    for(int i=0;i<32;i++)
+    float thickness=0.3;
+    for(int i=0;i<64;i++)
     {
         p+=d*s;
         s+=a;
         vec3 p_screen = worldToScreen(p);
         float cursor_depth = p_screen.z * 2 - 1;
         float record_depth = texture(gbuf0, p_screen.xy).a;
-        if(cursor_depth > 1e-3 + record_depth)
+        if(cursor_depth > 1e-3 + record_depth && linearDepth(cursor_depth) - linearDepth(record_depth) < thickness + s)
         {
             return p;
+        }
+        if(cursor_depth > 1e-3 + record_depth)
+        {
+            return vec3(2e18);
         }
     }
     return vec3(2e18);
