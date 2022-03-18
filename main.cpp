@@ -191,16 +191,6 @@ int main()
         rnds.push_back(random_float(generator));
     }
 
-    std::vector<glm::vec3> ssao_noise;
-    for (GLuint i = 0; i < 64; i++)
-    {
-        glm::vec3 noise(
-            random_float(generator) * 2.0 - 1.0,
-            random_float(generator) * 2.0 - 1.0,
-            random_float(generator) * 2.0 - 1.0);
-        ssao_noise.push_back(noise);
-    }
-
     Texture ssao_texture;
     FramebufferObject ssao_fbo({&ssao_texture}, screen_x, screen_y);
 
@@ -210,6 +200,11 @@ int main()
                                       PointLight(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f))};
 
     glm::vec3 ambient_light_irradiance(0.2f, 0.2f, 0.2f);
+
+    Texture film_tex;
+    FramebufferObject film_fbo({&film_tex}, screen_x, screen_y);
+
+    Shader ssr_shader("../ssr.vs", "../ssr.fs");
 
     Profiler profiler;
 
@@ -248,9 +243,7 @@ int main()
         profiler.tick("ssao.ao");
 
         // LIGHTING STAGE
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+        film_fbo.use();
         lighting_shader.use();
         lighting_shader.setLights(lights);
         lighting_shader.setCamera(camera);
@@ -265,6 +258,20 @@ int main()
 
         profiler.tick("lighting");
 
+        // SSR STAGE
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        ssr_shader.use();
+        ssr_shader.setCamera(camera);
+        ssr_shader.setTexture("film", &film_tex);
+        for (int i = 0; i < 256; i++)
+        {
+            ssr_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
+        }
+        deferred_renderer.drawLighting(ssr_shader);
+
+
+        profiler.tick("ssreflect");
         glfwSwapBuffers(window);
 
         profiler.end();
