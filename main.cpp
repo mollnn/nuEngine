@@ -238,9 +238,8 @@ int main()
         ssao_fbo.use();
         ssao_shader.use();
         ssao_shader.setCamera(camera);
-        ssao_shader.setUniformi("noise_tex", 16);
 
-        for (int i = 0; i < 128; i++)
+        for (int i = 0; i < 256; i++)
         {
             ssao_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
         }
@@ -256,7 +255,7 @@ int main()
         lighting_shader.setLights(lights);
         lighting_shader.setCamera(camera);
         lighting_shader.setUniform("ambient", ambient_light_irradiance);
-        for (int i = 0; i < 128; i++)
+        for (int i = 0; i < 256; i++)
         {
             lighting_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
         }

@@ -51,19 +51,32 @@ void main()
     float occ=1;
     float radius = 0.5;
     int N_SAMPLE = 32;
+
+    int scrx = int(vTex.x * 640);
+    int scry = int(vTex.y * 360);
+    int scrid = (scrx % 16) * 16 + scry % 16;
+    float scrrnd = rnds[scrid];
+
     for(int i=0;i<N_SAMPLE;i++)
     {
-        vec3 kernel = vec3(rndPseudoGaussian(rnds[i*3]), rndPseudoGaussian(rnds[i*3+1]), rndPseudoGaussian(rnds[i*3+2]));
-        if(dot(kernel,vNormal)<0) kernel*=-1;
+        float cos_theta = rnds[i*3];
+        float sin_theta = sqrt(1-cos_theta*cos_theta);
+        float phi = rnds[i*3+1] * 3.14159 * 2;
+        phi += scrrnd * 3.14159 * 2;
+        float r = pow(rnds[i*3+2], 3);
+        vec3 n = normalize(vNormal);
+        vec3 t = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
+        vec3 b = cross(n, t);
+        vec3 kernel = r * (sin_theta*cos(phi)*t + sin_theta*sin(phi)*b + cos_theta*n);
         kernel *= radius;
         vec3 sample_pos=vPos+kernel;
         vec4 sample_pos_ss = (projection*view*vec4(sample_pos,1.0));
         vec2 sample_xy = sample_pos_ss.xy/sample_pos_ss.w*0.5+0.5;
-        float sample_d = linearDepth(texture(gbuf0, sample_xy).a);
-        float sample_z = linearDepth(sample_pos_ss.z/sample_pos_ss.w);
-        if(sample_d<sample_z)
+        float sample_d = (texture(gbuf0, sample_xy).a);
+        float sample_z = (sample_pos_ss.z/sample_pos_ss.w);
+        if(sample_d+1e-3<sample_z)
         {
-            float sm = smoothstep(0.0, 1.0, radius / (sample_z - sample_d));
+            float sm = smoothstep(0.0, 1.0, radius / (linearDepth(sample_z) - linearDepth(sample_d)));
             occ-=1.0/N_SAMPLE*sm;
         }
     }
