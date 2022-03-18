@@ -56,9 +56,9 @@ vec3 worldToScreen(vec3 w)
 vec3 intersection(vec3 o, vec3 d)
 {
     float s=0.01;
-    float a=0.001;
+    float a=0.005;
     vec3 p=o;
-    for(int i=0;i<64;i++)
+    for(int i=0;i<32;i++)
     {
         p+=d*s;
         s+=a;
@@ -91,7 +91,7 @@ void main()
     vec3 n = normalize(vNormal);
     vec3 wo = normalize(camera_pos - p);
 
-    int N_SAMPLE = 16;
+    int N_SAMPLE = 4;
     for(int i=0;i<N_SAMPLE;i++)
     {
         vec3 ax1 = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));

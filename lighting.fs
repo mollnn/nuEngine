@@ -78,7 +78,7 @@ void main()
         float vis = 1.0;
         if(i==0)
         {
-            const int N_SAMPLE = 64;
+            const int N_SAMPLE = 16;
             float shadow_bias = max(0.3 * (1.0 - dot(Wi, n)), 0.03);
             vec3 d_receiver = (vPos - point_light[0].pos);
             float dist_receiver = length(d_receiver);
@@ -139,7 +139,7 @@ void main()
     vec3 rsm_contribution = vec3(0.0,0.0,0.0);
     float sum_weight=0;
     for(int j=0;j<1;j++)
-    for(int i=0;i<64;i++)
+    for(int i=0;i<16;i++)
     {
         vec3 dist_receiver = normalize(vPos - point_light[0].pos);
         // vec3 bias = rndPseudoGaussian(rnds[i*4+j]) *

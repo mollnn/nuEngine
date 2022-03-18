@@ -51,7 +51,7 @@ void main()
 
     float occ=1;
     float radius = 0.5;
-    int N_SAMPLE = 32;
+    int N_SAMPLE = 16;
 
     int scrx = int(vTex.x * 640);
     int scry = int(vTex.y * 360);
