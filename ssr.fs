@@ -53,9 +53,9 @@ vec3 worldToScreen(vec3 w)
 vec3 intersection(vec3 o, vec3 d)
 {
     float s=0.01;
-    float a=0.005;
+    float a=0.01;
     vec3 p=o;
-    for(int i=0;i<64;i++)
+    for(int i=0;i<32;i++)
     {
         p+=d*s;
         s+=a;
@@ -90,15 +90,41 @@ void main()
     vec3 p = vPos;
     vec3 n = normalize(vNormal);
     vec3 wo = normalize(camera_pos - p);
-    vec3 wi = reflect(-wo, n);
-    vec3 hitpos = intersection(p, wi);
-    if(length(hitpos)<1e18)
+
+    int N_SAMPLE = 16;
+    for(int i=0;i<N_SAMPLE;i++)
     {
-        vec3 screen_pos = worldToScreen(hitpos);
-        if (screen_pos.x > 0.0 && screen_pos.y > 0.0 && screen_pos.x < 1.0 && screen_pos.y < 1.0)
+        vec3 ax1 = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
+        vec3 ax2 = cross(n, ax1);
+        float r1 = rnds[2*i+0];
+        float r2 = rnds[2*i+1];
+        r1 += scrrnd;
+        if(r1>=1.0) r1-=1.0;
+        r2 += scrrnd;
+        if(r2>=1.0) r2-=1.0;
+        float cos_theta = pow(r1, 1.0 / (Ns + 2.0));
+        float sin_theta = sqrt(1 - cos_theta);
+        float phi = 2.0 * 3.14159 * r2;
+        vec3 h = cos_theta * n + sin_theta * cos(phi) * ax1 + sin_theta * sin(phi) * ax2;
+        float pdf = (Ns + 2.0) / 8 / 3.14159 * pow(max(0.0, dot(h, n)), Ns + 1.0);
+        vec3 wi = reflect(-wo, h);
+        vec3 hitpos = intersection(p, wi);
+        if(length(hitpos)<1e18)
         {
-            color += texture(film, screen_pos.xy).xyz * 0.5;
-            // color = hitpos;
+            vec3 screen_pos = worldToScreen(hitpos);
+            if (screen_pos.x > 0.0 && screen_pos.y > 0.0 && screen_pos.x < 1.0 && screen_pos.y < 1.0)
+            {
+                vec3 Pl = hitpos;
+                vec3 Ps = vPos;
+                vec3 Li = texture(film, screen_pos.xy).xyz;
+                vec3 Wi = normalize(Pl-Ps);
+                vec3 Wo = normalize(camera_pos-Ps);
+                vec3 h = normalize(Wi + Wo);
+                vec3 Ld = 1.0 / 3.14159 * Kd * Li * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
+                vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Li * pow(max(0.0, dot(h, n)), Ns)  * (dot(Wo, n) > 0 ? 1.0 : 0.0);
+                color += (Ls + Ld) / N_SAMPLE / pdf;
+                // color = hitpos;
+            }
         }
     }
 
