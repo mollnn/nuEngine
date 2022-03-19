@@ -158,11 +158,6 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
-    int maxVertexUniform, maxFragmentUniform;
-    glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS, &maxVertexUniform);
-    glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS, &maxFragmentUniform);
-    std::cout << "Max Uniform " << maxVertexUniform << " " << maxFragmentUniform << std::endl;
-
     Model scene;
     // scene.addChildren(std::make_shared<Model>("CornellBox-Mirror.obj"));
     scene.addChildren(std::make_shared<Model>("mitsuba.obj"));

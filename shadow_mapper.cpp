@@ -15,6 +15,7 @@ ShadowMapper::ShadowMapper() : shadow_shader("../shadow.vs", "../shadow.fs"),
 {
     depth_texture.setParami(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     depth_texture.setParami(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    depth_texture.setParami(GL_GENERATE_MIPMAP, GL_FALSE);
     pos_texture.setParami(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     pos_texture.setParami(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     normal_texture.setParami(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -70,10 +71,10 @@ void ShadowMapper::lightPass(glm::vec3 shadow_light_pos, glm::vec3 shadow_light_
         shadow_shader.setUniform("lvp", shadow_light_projection * shadow_light_view[i]);
         shadow_map_fbo[i].use();
         // glViewport(0, 0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
-        // glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_fbo);
-        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, depth_texture, 0);
-        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, pos_texture, 0);
-        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, normal_texture, 0);
+        // glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_fbo.fbo_);
+        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, depth_texture.id(), 0);
+        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, pos_texture.id(), 0);
+        // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, normal_texture.id, 0);
         // glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, flux_texture, 0);
         // GLuint tmp[3] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
         // glDrawBuffers(3, tmp);
