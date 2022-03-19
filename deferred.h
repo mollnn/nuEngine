@@ -14,7 +14,7 @@
 #include "camera.h"
 #include "cameracontrol.h"
 #include "shader.h"
-#include "texture.h"
+#include "texture2d.h"
 #include "material.h"
 #include "model.h"
 #include "stb_image.h"
@@ -26,7 +26,7 @@ struct Deferred
     std::vector<GLfloat> vertices;
     GLuint vao, vbo;
     Shader gbuffer_shader;
-    Texture gbuffer_texture[n_gbuffer];
+    Texture2D gbuffer_texture[n_gbuffer];
     FramebufferObject gbuffer_fbo;
     int width_, height_;
 

@@ -15,8 +15,8 @@ ShadowMapper::ShadowMapper() : shadow_shader("../shadow.vs", "../shadow.fs")
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        GLfloat texture_border_color[] = {1.0, 1.0, 1.0, 1.0};
-        glTexParameterfv(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BORDER_COLOR, texture_border_color);
+        // GLfloat texture_border_color[] = {1.0, 1.0, 1.0, 1.0};
+        // glTexParameterfv(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_BORDER_COLOR, texture_border_color);
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     };
 

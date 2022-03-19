@@ -4,7 +4,7 @@ set(CMAKE_CXX_STANDARD 17)
 project(GLFW_test)
 include_directories(include)
 find_package(glfw3 REQUIRED)
-file(GLOB project_file glad.c main.cpp pointlight.cpp camera.cpp cameracontrol.cpp shader.cpp texture.cpp material.cpp mesh.cpp model.cpp deferred.cpp shadow_mapper.cpp framebuffer_object.cpp)
+file(GLOB project_file glad.c main.cpp pointlight.cpp camera.cpp cameracontrol.cpp shader.cpp texture2d.cpp material.cpp mesh.cpp model.cpp deferred.cpp shadow_mapper.cpp framebuffer_object.cpp)
 add_executable(${PROJECT_NAME} ${project_file})
 
 target_link_libraries(${PROJECT_NAME}

@@ -12,12 +12,12 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "texture.h"
+#include "texture2d.h"
 #include "shader.h"
 
 class Material
 {
-    std::map<std::string, Texture *> textures;
+    std::map<std::string, Texture2D *> textures;
     std::map<std::string, int> properties_i;
     std::map<std::string, float> properties_f;
     std::map<std::string, glm::vec3> properties_v3;

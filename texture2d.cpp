@@ -1,4 +1,4 @@
-#include "texture.h"
+#include "texture2d.h"
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -12,7 +12,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-void Texture::setDefaultParams()
+void Texture2D::setDefaultParams()
 {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -21,7 +21,7 @@ void Texture::setDefaultParams()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-Texture::Texture(const std::string &tex_name)
+Texture2D::Texture2D(const std::string &tex_name)
 {
     int sx, sy;
 
@@ -37,7 +37,7 @@ Texture::Texture(const std::string &tex_name)
     filename_ = tex_name;
 }
 
-Texture::Texture(int width, int height, const void *data, GLuint intformat, GLuint format, GLuint dtype)
+Texture2D::Texture2D(int width, int height, const void *data, GLuint intformat, GLuint format, GLuint dtype)
 {
     glGenTextures(1, &handle_);
     glBindTexture(GL_TEXTURE_2D, handle_);
@@ -46,19 +46,19 @@ Texture::Texture(int width, int height, const void *data, GLuint intformat, GLui
     glTexImage2D(GL_TEXTURE_2D, 0, intformat, width, height, 0, format, dtype, data);
 }
 
-void Texture::setParami(GLuint k, GLuint v)
+void Texture2D::setParami(GLuint k, GLuint v)
 {
     glBindTexture(GL_TEXTURE_2D, handle_);
     glTexParameteri(GL_TEXTURE_2D, k, v);
 }
 
-void Texture::use(int unit_id)
+void Texture2D::use(int unit_id)
 {
     glActiveTexture(GL_TEXTURE0 + unit_id);
     glBindTexture(GL_TEXTURE_2D, handle_);
 }
 
-int Texture::id()
+GLuint Texture2D::id()
 {
     return handle_;
 }

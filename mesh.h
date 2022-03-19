@@ -12,7 +12,7 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "texture.h"
+#include "texture2d.h"
 #include "shader.h"
 #include "material.h"
 

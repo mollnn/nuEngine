@@ -1,6 +1,6 @@
 #include "framebuffer_object.h"
 
-FramebufferObject::FramebufferObject(const std::vector<Texture *> &attachments, int width, int height)
+FramebufferObject::FramebufferObject(const std::vector<Texture2D *> &attachments, int width, int height)
 {
     glGenFramebuffers(1, &fb_);
     glBindFramebuffer(GL_FRAMEBUFFER, fb_);

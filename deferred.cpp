@@ -1,7 +1,7 @@
 #include "deferred.h"
 
 Deferred::Deferred(int width, int height) : width_(width), height_(height), gbuffer_shader("../gbuf.vs", "../gbuf.fs"),
-                                            gbuffer_fbo(std::vector<Texture *>({gbuffer_texture + 0,
+                                            gbuffer_fbo(std::vector<Texture2D *>({gbuffer_texture + 0,
                                                                                 gbuffer_texture + 1,
                                                                                 gbuffer_texture + 2,
                                                                                 gbuffer_texture + 3,

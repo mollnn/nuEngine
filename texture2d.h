@@ -8,7 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <bits/stdc++.h>
 
-class Texture
+class Texture2D
 {
     GLuint handle_;
     std::string filename_;
@@ -17,11 +17,11 @@ class Texture
     void setDefaultParams();
 
 public:
-    Texture(const std::string &tex_name = "");
-    Texture(int width, int height, const void *data, GLuint intformat = GL_RGB, GLuint format = GL_RGB, GLuint dtype = GL_RGB);
+    Texture2D(const std::string &tex_name = "");
+    Texture2D(int width, int height, const void *data, GLuint intformat = GL_RGB, GLuint format = GL_RGB, GLuint dtype = GL_RGB);
     void setParami(GLuint k, GLuint v);
     void use(int unit_id);
-    int id();
+    GLuint id();
 };
 
 #endif

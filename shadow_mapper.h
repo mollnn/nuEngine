@@ -14,7 +14,7 @@
 #include "camera.h"
 #include "cameracontrol.h"
 #include "shader.h"
-#include "texture.h"
+#include "texture2d.h"
 #include "material.h"
 #include "model.h"
 #include "stb_image.h"

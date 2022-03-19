@@ -6,7 +6,7 @@ void Material::loadTexturesAssimpType(aiTextureType type, const std::string &typ
     {
         aiString filename;
         mat->GetTexture(type, i, &filename);
-        Texture *texture = new Texture(filename.C_Str());
+        Texture2D *texture = new Texture2D(filename.C_Str());
         textures[type_name + std::to_string(i + 1)] = texture;
         std::string flag_name = "usetex" + type_name.substr(7);
         properties_i[flag_name] = 1;
