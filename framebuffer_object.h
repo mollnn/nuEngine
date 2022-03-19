@@ -15,6 +15,7 @@
 #include "cameracontrol.h"
 #include "shader.h"
 #include "texture2d.h"
+#include "texture_cube.h"
 #include "material.h"
 #include "model.h"
 #include "stb_image.h"
@@ -24,9 +25,12 @@ class FramebufferObject
 {
     GLuint fb_;
     GLuint rbo_;
+    int width_;
+    int height_;
 
 public:
-    FramebufferObject(const std::vector<Texture2D *> &attachments, int width, int height);
+    FramebufferObject(const std::vector<Texture2D *> &attachments, int width, int height, const Texture2D* depth_attachments = nullptr);
+    FramebufferObject(const std::vector<TextureCube *> &attachments, int width, int height, int cube_idx, const TextureCube* depth_attachments = nullptr);
 
     void use();
 };

@@ -6,7 +6,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <bits/stdc++.h>
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
@@ -46,6 +45,10 @@ Texture2D::Texture2D(int width, int height, const void *data, GLuint intformat, 
     glTexImage2D(GL_TEXTURE_2D, 0, intformat, width, height, 0, format, dtype, data);
 }
 
+Texture2D::Texture2D(int width, int height) : Texture2D(width, height, nullptr, GL_RGBA16F, GL_RGBA, GL_FLOAT)
+{
+}
+
 void Texture2D::setParami(GLuint k, GLuint v)
 {
     glBindTexture(GL_TEXTURE_2D, handle_);
@@ -58,7 +61,7 @@ void Texture2D::use(int unit_id)
     glBindTexture(GL_TEXTURE_2D, handle_);
 }
 
-GLuint Texture2D::id()
+GLuint Texture2D::id() const
 {
     return handle_;
 }

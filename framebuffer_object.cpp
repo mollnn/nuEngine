@@ -1,6 +1,6 @@
 #include "framebuffer_object.h"
 
-FramebufferObject::FramebufferObject(const std::vector<Texture2D *> &attachments, int width, int height)
+FramebufferObject::FramebufferObject(const std::vector<Texture2D *> &attachments, int width, int height, const Texture2D *depth_attachments) : width_(width), height_(height)
 {
     glGenFramebuffers(1, &fb_);
     glBindFramebuffer(GL_FRAMEBUFFER, fb_);
@@ -11,21 +11,54 @@ FramebufferObject::FramebufferObject(const std::vector<Texture2D *> &attachments
     {
         atts.push_back(GL_COLOR_ATTACHMENT0 + i);
         glBindTexture(GL_TEXTURE_2D, attachments[i]->id());
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, attachments[i]->id(), 0);
     }
     glDrawBuffers(attachments.size(), atts.data());
 
-    glGenRenderbuffers(1, &rbo_);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo_);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_);
+    if (depth_attachments == nullptr)
+    {
+        glGenRenderbuffers(1, &rbo_);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo_);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_);
+    }
+    else
+    {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_attachments->id(), 0);
+    }
+}
+
+FramebufferObject::FramebufferObject(const std::vector<TextureCube *> &attachments, int width, int height, int cube_idx, const TextureCube *depth_attachments) : width_(width), height_(height)
+{
+    glGenFramebuffers(1, &fb_);
+    glBindFramebuffer(GL_FRAMEBUFFER, fb_);
+
+    std::vector<GLuint> atts;
+
+    for (int i = 0; i < attachments.size(); i++)
+    {
+        atts.push_back(GL_COLOR_ATTACHMENT0 + i);
+        glBindTexture(GL_TEXTURE_2D, attachments[i]->id());
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_CUBE_MAP_POSITIVE_X + cube_idx, attachments[i]->id(), 0);
+    }
+    glDrawBuffers(attachments.size(), atts.data());
+
+    if (depth_attachments == nullptr)
+    {
+        glGenRenderbuffers(1, &rbo_);
+        glBindRenderbuffer(GL_RENDERBUFFER, rbo_);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, width, height);
+        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rbo_);
+    }
+    else
+    {
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_CUBE_MAP_POSITIVE_X + cube_idx, depth_attachments->id(), 0);
+    }
 }
 
 void FramebufferObject::use()
 {
+    glViewport(0, 0, width_, height_);
     glBindFramebuffer(GL_FRAMEBUFFER, fb_);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }

@@ -197,9 +197,9 @@ int main()
         screen_rnd.push_back(random_float(generator));
     }
 
-    Texture2D screen_rnd_tex(screen_x, screen_y, screen_rnd.data(), GL_RGB32F, GL_RGB, GL_FLOAT);
+    Texture2D screen_rnd_tex(screen_x, screen_y, screen_rnd.data(), GL_RGB16F, GL_RGB, GL_FLOAT);
 
-    Texture2D ssao_texture;
+    Texture2D ssao_texture(screen_x, screen_y);
     FramebufferObject ssao_fbo({&ssao_texture}, screen_x, screen_y);
 
     // std::vector<PointLight> lights = {PointLight(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.5f, 0.0f))};
@@ -209,7 +209,7 @@ int main()
 
     glm::vec3 ambient_light_irradiance(0.2f, 0.2f, 0.2f);
 
-    Texture2D film_tex;
+    Texture2D film_tex(screen_x, screen_y);
     FramebufferObject film_fbo({&film_tex}, screen_x, screen_y);
 
     Shader ssr_shader("../ssr.vs", "../ssr.fs");

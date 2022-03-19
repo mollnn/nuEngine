@@ -18,16 +18,18 @@
 #include "material.h"
 #include "model.h"
 #include "stb_image.h"
+#include "framebuffer_object.h"
+#include "texture_cube.h"
 
 struct ShadowMapper
 {
     const GLuint SHADOW_MAP_WIDTH = 1024, SHADOW_MAP_HEIGHT = 1024;
     Shader shadow_shader;
-    GLuint shadow_map_fbo;
-    GLuint depth_texture;
-    GLuint pos_texture;
-    GLuint normal_texture;
-    GLuint flux_texture;  // out flux
+    TextureCube depth_texture;
+    TextureCube pos_texture;
+    TextureCube normal_texture;
+    TextureCube flux_texture;  // out flux
+    FramebufferObject shadow_map_fbo[6];
     float shadow_limit = 100.0;
 
     ShadowMapper();

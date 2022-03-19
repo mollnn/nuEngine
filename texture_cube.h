@@ -1,5 +1,5 @@
-#ifndef _TEXTURE2D_H
-#define _TEXTURE2D_H
+#ifndef _TEXTURECUBE_H
+#define _TEXTURECUBE_H
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -9,17 +9,13 @@
 #include <bits/stdc++.h>
 #include "texture.h"
 
-class Texture2D: public Texture
+class TextureCube: public Texture
 {
-    std::string filename_;
-
     void genTexture();
     void setDefaultParams();
 
 public:
-    Texture2D(const std::string &tex_name = "");
-    Texture2D(int width, int height, const void *data, GLuint intformat = GL_RGB, GLuint format = GL_RGB, GLuint dtype = GL_RGB);
-    Texture2D(int width, int height);
+    TextureCube(int width, int height, GLuint intformat = GL_RGB, GLuint format = GL_RGB, GLuint dtype = GL_RGB);
     void setParami(GLuint k, GLuint v);
     virtual void use(int unit_id) override;
     virtual GLuint id() const override;

@@ -1,12 +1,19 @@
 #include "deferred.h"
 
 Deferred::Deferred(int width, int height) : width_(width), height_(height), gbuffer_shader("../gbuf.vs", "../gbuf.fs"),
+                                            gbuffer_texture{
+                                                {width, height},
+                                                {width, height},
+                                                {width, height},
+                                                {width, height},
+                                                {width, height},
+                                                {width, height}},
                                             gbuffer_fbo(std::vector<Texture2D *>({gbuffer_texture + 0,
-                                                                                gbuffer_texture + 1,
-                                                                                gbuffer_texture + 2,
-                                                                                gbuffer_texture + 3,
-                                                                                gbuffer_texture + 4,
-                                                                                gbuffer_texture + 5}),
+                                                                                  gbuffer_texture + 1,
+                                                                                  gbuffer_texture + 2,
+                                                                                  gbuffer_texture + 3,
+                                                                                  gbuffer_texture + 4,
+                                                                                  gbuffer_texture + 5}),
                                                         width, height)
 {
     vertices = {-1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,

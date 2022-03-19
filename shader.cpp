@@ -123,7 +123,7 @@ GLuint Shader::id()
     return sp_;
 }
 
-void Shader::setTexture(const std::string &name, Texture2D *texture)
+void Shader::setTexture(const std::string &name, Texture *texture)
 {
     textures[name] = texture;
 }
