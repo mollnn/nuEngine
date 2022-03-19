@@ -10,16 +10,16 @@
 
 class Texture
 {
-    int handle_;
+    GLuint handle_;
     std::string filename_;
 
-    static GLuint loadTexture(const std::string &tex_name);
-    static GLuint loadTexture(int width, int height, const unsigned char* data);
+    void genTexture();
+    void setDefaultParams();
 
 public:
     Texture(const std::string &tex_name = "");
-    Texture(int width, int height, const unsigned char* data);
-
+    Texture(int width, int height, const void *data, GLuint intformat = GL_RGB, GLuint format = GL_RGB, GLuint dtype = GL_RGB);
+    void setParami(GLuint k, GLuint v);
     void use(int unit_id);
     int id();
 };

@@ -12,55 +12,44 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-GLuint Texture::loadTexture(const std::string &tex_name)
+void Texture::setDefaultParams()
 {
-    int sx, sy;
-
-    GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+Texture::Texture(const std::string &tex_name)
+{
+    int sx, sy;
+
+    glGenTextures(1, &handle_);
+    glBindTexture(GL_TEXTURE_2D, handle_);
+    setDefaultParams();
+
     if (tex_name != "")
     {
         unsigned char *tex_data = stbi_load(tex_name.c_str(), &sx, &sy, nullptr, 3);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sx, sy, 0, GL_RGB, GL_UNSIGNED_BYTE, tex_data);
     }
-
-    return tex;
-}
-
-GLuint Texture::loadTexture(int width, int height, const unsigned char* data)
-{
-    int sx, sy;
-
-    GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, sx, sy, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-    return tex;
-}
-
-Texture::Texture(const std::string &tex_name)
-{
-    handle_ = loadTexture(tex_name);
     filename_ = tex_name;
 }
 
-Texture::Texture(int width, int height, const unsigned char* data)
+Texture::Texture(int width, int height, const void *data, GLuint intformat, GLuint format, GLuint dtype)
 {
-    handle_ = loadTexture(width, height, data);
+    glGenTextures(1, &handle_);
+    glBindTexture(GL_TEXTURE_2D, handle_);
+    setDefaultParams();
+
+    glTexImage2D(GL_TEXTURE_2D, 0, intformat, width, height, 0, format, dtype, data);
+}
+
+void Texture::setParami(GLuint k, GLuint v)
+{
+    glBindTexture(GL_TEXTURE_2D, handle_);
+    glTexParameteri(GL_TEXTURE_2D, k, v);
 }
 
 void Texture::use(int unit_id)
