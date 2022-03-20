@@ -1,6 +1,6 @@
 #version 330 core
 
-in vec2 vTex;
+in vec2 v_texcoord;
 
 out vec4 FragColor;
 
@@ -83,19 +83,19 @@ vec3 intersection(vec3 o, vec3 d)
 
 void main()
 {
-    vec3 vPos = texture(gbuf0, vTex).xyz;
-    vec3 vNormal = texture(gbuf1, vTex).xyz;
-    vec3 Ka = texture(gbuf2, vTex).xyz;
-    vec3 Kd = texture(gbuf3, vTex).xyz;
-    vec3 Ks = texture(gbuf4, vTex).xyz;
-    float Ns = texture(gbuf5, vTex).x;
+    vec3 v_pos = texture(gbuf0, v_texcoord).xyz;
+    vec3 v_normal = texture(gbuf1, v_texcoord).xyz;
+    vec3 Ka = texture(gbuf2, v_texcoord).xyz;
+    vec3 Kd = texture(gbuf3, v_texcoord).xyz;
+    vec3 Ks = texture(gbuf4, v_texcoord).xyz;
+    float Ns = texture(gbuf5, v_texcoord).x;
     
-    float scrrnd = texture(screen_rnd_tex, vTex).x;
+    float scrrnd = texture(screen_rnd_tex, v_texcoord).x;
 
     vec3 color = vec3(0.0);
 
-    vec3 p = vPos;
-    vec3 n = normalize(vNormal);
+    vec3 p = v_pos;
+    vec3 n = normalize(v_normal);
     vec3 wo = normalize(camera_pos - p);
 
     int N_SAMPLE = 1;
@@ -136,7 +136,7 @@ void main()
             if (screen_pos.x > 0.0 && screen_pos.y > 0.0 && screen_pos.x < 1.0 && screen_pos.y < 1.0)
             {
                 vec3 Pl = hitpos;
-                vec3 Ps = vPos;
+                vec3 Ps = v_pos;
                 vec3 Li = texture(film, screen_pos.xy).xyz;
                 vec3 Wi = normalize(Pl-Ps);
                 vec3 Wo = normalize(camera_pos-Ps);

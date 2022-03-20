@@ -1,6 +1,6 @@
 #version 330 core
 
-in vec2 vTex;
+in vec2 v_texcoord;
 
 out vec4 color;
 
@@ -47,18 +47,18 @@ float rndUniform(float alpha)
 
 void main()
 {
-    vec3 vPos = texture(gbuf0, vTex).xyz;
-    float vDepth = texture(gbuf0, vTex).a;
-    float linear_depth = linearDepth(vDepth) / far;
-    vec3 vNormal = texture(gbuf1, vTex).xyz;
+    vec3 v_pos = texture(gbuf0, v_texcoord).xyz;
+    float v_depth = texture(gbuf0, v_texcoord).a;
+    float linear_depth = linearDepth(v_depth) / far;
+    vec3 v_normal = texture(gbuf1, v_texcoord).xyz;
 
     float occ=1;
     float radius = 0.5;
     int N_SAMPLE = 4;
 
-    int scrx = int(vTex.x * 640);
-    int scry = int(vTex.y * 360);
-    float scrrnd = texture(screen_rnd_tex, vTex).x;
+    int scrx = int(v_texcoord.x * 960);
+    int scry = int(v_texcoord.y * 540);
+    float scrrnd = texture(screen_rnd_tex, v_texcoord).x;
 
     for(int i=0;i<N_SAMPLE;i++)
     {
@@ -67,12 +67,12 @@ void main()
         float phi = rnds[i*3+1] * 3.14159 * 2;
         phi += scrrnd * 3.14159 * 2;
         float r = pow(rnds[i*3+2], 3);
-        vec3 n = normalize(vNormal);
+        vec3 n = normalize(v_normal);
         vec3 t = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
         vec3 b = cross(n, t);
         vec3 kernel = r * (sin_theta*cos(phi)*t + sin_theta*sin(phi)*b + cos_theta*n);
         kernel *= radius;
-        vec3 sample_pos=vPos+kernel;
+        vec3 sample_pos=v_pos+kernel;
         vec4 sample_pos_ss = (projection*view*vec4(sample_pos,1.0));
         vec2 sample_xy = sample_pos_ss.xy/sample_pos_ss.w*0.5+0.5;
         float sample_d = (texture(gbuf0, sample_xy).a);

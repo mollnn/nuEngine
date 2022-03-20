@@ -1,6 +1,6 @@
 #version 330 core
 
-in vec2 vTex;
+in vec2 v_texcoord;
 out vec4 FragColor;
 
 // INPUTS
@@ -16,7 +16,7 @@ uniform samplerCube shadow_map;
 uniform samplerCube shadow_map_pos;
 uniform samplerCube shadow_map_normal;
 uniform samplerCube shadow_map_flux;
-uniform float shadowLimit;
+uniform float shadow_limit;
 
 uniform vec3 camera_pos;
 
@@ -55,20 +55,20 @@ float rndUniform(float alpha)
 
 void main()
 {
-    vec3 vPos = texture(gbuf0, vTex).xyz;
-    vec3 vNormal = texture(gbuf1, vTex).xyz;
-    vec3 Ka = texture(gbuf2, vTex).xyz;
-    vec3 Kd = texture(gbuf3, vTex).xyz;
-    vec3 Ks = texture(gbuf4, vTex).xyz;
-    float Ns = texture(gbuf5, vTex).x;
+    vec3 v_pos = texture(gbuf0, v_texcoord).xyz;
+    vec3 v_normal = texture(gbuf1, v_texcoord).xyz;
+    vec3 Ka = texture(gbuf2, v_texcoord).xyz;
+    vec3 Kd = texture(gbuf3, v_texcoord).xyz;
+    vec3 Ks = texture(gbuf4, v_texcoord).xyz;
+    float Ns = texture(gbuf5, v_texcoord).x;
     
-    int scrx = int(vTex.x * 640);
-    int scry = int(vTex.y * 360);
-    float scrrnd = texture(screen_rnd_tex, vTex).x;
+    int scrx = int(v_texcoord.x * 960);
+    int scry = int(v_texcoord.y * 540);
+    float scrrnd = texture(screen_rnd_tex, v_texcoord).x;
 
-    vec3 color = ambient * Ka * (texture(ao, vTex).r);
-    vec3 Ps = vPos;
-    vec3 n = normalize(vNormal);
+    vec3 color = ambient * Ka * (texture(ao, v_texcoord).r);
+    vec3 Ps = v_pos;
+    vec3 n = normalize(v_normal);
     for(int i=0;i<n_point_light;i++)
     {
         vec3 Pl = point_light[i].pos;
@@ -83,7 +83,7 @@ void main()
         {
             const int N_SAMPLE = 8;
             float shadow_bias = max(0.3 * (1.0 - dot(Wi, n)), 0.03);
-            vec3 d_receiver = (vPos - point_light[0].pos);
+            vec3 d_receiver = (v_pos - point_light[0].pos);
             float dist_receiver = length(d_receiver);
             vec3 dir_receiver = normalize(d_receiver);
             float dist_blocker = 0.0;
@@ -105,7 +105,7 @@ void main()
                 vec3 t = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
                 vec3 b = cross(n, t);
                 vec3 offset = r * (cos(phi)*t + sin(phi)*b) * blocker_search_radius;
-                float d0 = texture(shadow_map, dir_receiver + offset).r * shadowLimit;
+                float d0 = texture(shadow_map, dir_receiver + offset).r * shadow_limit;
                 if(dist_receiver - d0 > shadow_bias)
                 {
                     dist_blocker += d0;
@@ -130,7 +130,7 @@ void main()
                 vec3 t = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
                 vec3 b = cross(n, t);
                 vec3 offset = r * (cos(phi)*t + sin(phi)*b) * shadow_radius;
-                float d0 = texture(shadow_map, dir_receiver + offset).r * shadowLimit;
+                float d0 = texture(shadow_map, dir_receiver + offset).r * shadow_limit;
                 if(dist_receiver - d0 > shadow_bias) vis -= 1.0 / N_SAMPLE;
             }
             // color += ((dist_receiver - dist_blocker)) * vec3(1.0, 0.0, 0.0);

@@ -41,7 +41,7 @@ void CameraControl::onEvents()
     if (key_status[GLFW_KEY_LEFT_ALT] && mouse_button_status[0])
     {
         pitch += -89.0f * delta_cursor_y * cam_rotate_speed / 512;
-        yaw += 360.0f * delta_cursor_x * cam_rotate_speed / 512;
+        yaw += 540.0f * delta_cursor_x * cam_rotate_speed / 512;
 
         if (pitch > 89.0f)
             pitch = 89.0f;

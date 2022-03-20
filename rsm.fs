@@ -1,6 +1,6 @@
 #version 330 core
 
-in vec2 vTex;
+in vec2 v_texcoord;
 out vec4 FragColor;
 
 // INPUTS
@@ -16,7 +16,7 @@ uniform samplerCube shadow_map;
 uniform samplerCube shadow_map_pos;
 uniform samplerCube shadow_map_normal;
 uniform samplerCube shadow_map_flux;
-uniform float shadowLimit;
+uniform float shadow_limit;
 
 uniform vec3 camera_pos;
 
@@ -55,20 +55,20 @@ float rndUniform(float alpha)
 
 void main()
 {
-    vec3 vPos = texture(gbuf0, vTex).xyz;
-    vec3 vNormal = texture(gbuf1, vTex).xyz;
-    // vec3 Ka = texture(gbuf2, vTex).xyz;
-    vec3 Kd = texture(gbuf3, vTex).xyz;
-    // vec3 Ks = texture(gbuf4, vTex).xyz;
-    // float Ns = texture(gbuf5, vTex).x;
+    vec3 v_pos = texture(gbuf0, v_texcoord).xyz;
+    vec3 v_normal = texture(gbuf1, v_texcoord).xyz;
+    // vec3 Ka = texture(gbuf2, v_texcoord).xyz;
+    vec3 Kd = texture(gbuf3, v_texcoord).xyz;
+    // vec3 Ks = texture(gbuf4, v_texcoord).xyz;
+    // float Ns = texture(gbuf5, v_texcoord).x;
     
-    int scrx = int(vTex.x * 640);
-    int scry = int(vTex.y * 360);
-    float scrrnd = texture(screen_rnd_tex, vTex).x;
+    int scrx = int(v_texcoord.x * 960);
+    int scry = int(v_texcoord.y * 540);
+    float scrrnd = texture(screen_rnd_tex, v_texcoord).x;
 
     vec3 color = vec3(0.0);
-    vec3 Ps = vPos;
-    vec3 n = normalize(vNormal);
+    vec3 Ps = v_pos;
+    vec3 n = normalize(v_normal);
 
     // RSM 
     vec3 rsm_contribution = vec3(0.0,0.0,0.0);
@@ -76,7 +76,7 @@ void main()
     const int N_SAMPLE = 8;
     for(int i=0;i<N_SAMPLE;i++)
     {
-        vec3 dist_receiver = normalize(vPos - point_light[0].pos);
+        vec3 dist_receiver = normalize(v_pos - point_light[0].pos);
         float cos_theta = rnds[i*3] * 2 - 1;
         float sin_theta = sqrt(1-cos_theta*cos_theta);
         float phi = rnds[i*3+1] * 3.14159 * 2;
@@ -93,9 +93,9 @@ void main()
         vec3 sample_pos = texture(shadow_map_pos, dir).xyz;
         vec3 sample_normal = texture(shadow_map_normal, dir).xyz;
         vec3 sample_flux = texture(shadow_map_flux, dir).xyz;
-        vec3 normal = normalize(vNormal);
-        float dist2_bounce = dot(vPos - sample_pos, vPos - sample_pos) + 1e-4;
-        vec3 dir_bounce = normalize(vPos - sample_pos);
+        vec3 normal = normalize(v_normal);
+        float dist2_bounce = dot(v_pos - sample_pos, v_pos - sample_pos) + 1e-4;
+        vec3 dir_bounce = normalize(v_pos - sample_pos);
         float dot1 = max(0.0, dot(sample_normal, dir_bounce));
         float dot2 = max(0.0, dot(normal, -dir_bounce));
         vec3 E = sample_flux / 3.14159 * dot1 * 1.0 / dist2_bounce;

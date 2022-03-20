@@ -23,7 +23,8 @@
 #include "shadow_mapper.h"
 #include "profiler.h"
 #include "callbacks.h"
-
+#include "scenedesc.h"
+#include "scene.h"
 
 struct SceneDesc
 {
@@ -33,7 +34,9 @@ struct SceneDesc
 
     SceneDesc();
 
+    void load(std::shared_ptr<Object> obj);
     SceneDesc(std::shared_ptr<Object> obj);
+    SceneDesc(Scene& obj);
 };
 
 

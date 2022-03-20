@@ -1,6 +1,6 @@
 #version 330 core
 
-in vec2 vTex;
+in vec2 v_texcoord;
 
 out vec4 FragColor;
 
@@ -24,17 +24,17 @@ uniform float far;
 
 void main()
 {
-    int screen_width = 640;
-    int screen_height = 360;
+    int screen_width = 960;
+    int screen_height = 540;
 
-    vec3 radiance_lighting = texture(lighting, vTex).xyz;
-    vec3 radiance_ssr = texture(ssr, vTex).xyz;
-    vec3 radiance_rsm = texture(rsm, vTex).xyz * 0.1;
+    vec3 radiance_lighting = texture(lighting, v_texcoord).xyz;
+    vec3 radiance_ssr = texture(ssr, v_texcoord).xyz;
+    vec3 radiance_rsm = texture(rsm, v_texcoord).xyz * 0.1;
     for(int i=-1;i<=1;i++)
     {
         for(int j=-1;j<=1;j++)
         {
-            radiance_rsm += texture(rsm, vTex + vec2(i,j) / vec2(screen_width, screen_height)).xyz * 0.1;
+            radiance_rsm += texture(rsm, v_texcoord + vec2(i,j) / vec2(screen_width, screen_height)).xyz * 0.1;
         }
     }
 

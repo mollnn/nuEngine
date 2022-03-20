@@ -4,7 +4,7 @@ SceneDesc::SceneDesc()
 {
 }
 
-SceneDesc::SceneDesc(std::shared_ptr<Object> obj)
+void SceneDesc::load(std::shared_ptr<Object> obj)
 {
     std::function<void(std::shared_ptr<Object>, glm::mat4)> solve = [&](std::shared_ptr<Object> p, glm::mat4 model)
     {
@@ -25,4 +25,15 @@ SceneDesc::SceneDesc(std::shared_ptr<Object> obj)
     };
 
     solve(obj, glm::mat4(1.0));
+}
+
+SceneDesc::SceneDesc(std::shared_ptr<Object> obj)
+{
+    load(obj);
+}
+
+SceneDesc::SceneDesc(Scene& scene)
+{
+    load(scene.root);
+    ambient_light_irradiance = scene.ambient_light_irradiance;
 }

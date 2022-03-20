@@ -62,13 +62,13 @@ void ShadowMapper::lightPass(glm::vec3 shadow_light_pos, glm::vec3 shadow_light_
     shadow_light_projection = glm::perspective(glm::radians(90.0), 1.0, 0.1, 100.0);
 
     shadow_shader.setUniform("model", (glm::mat4(1.0f)));
-    shadow_shader.setUniform("lightPos", shadow_light_pos);
-    shadow_shader.setUniform("lightInt", shadow_light_int);
-    shadow_shader.setUniform("shadowLimit", shadow_limit);
+    shadow_shader.setUniform("light_pos", shadow_light_pos);
+    shadow_shader.setUniform("light_int", shadow_light_int);
+    shadow_shader.setUniform("shadow_limit", shadow_limit);
 
     for (int i = 0; i < 6; i++)
     {
-        shadow_shader.setUniform("lvp", shadow_light_projection * shadow_light_view[i]);
+        shadow_shader.setUniform("shadow_light_view_project", shadow_light_projection * shadow_light_view[i]);
         shadow_map_fbo[i].use();
         // glViewport(0, 0, SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT);
         // glBindFramebuffer(GL_FRAMEBUFFER, shadow_map_fbo.fbo_);
@@ -87,7 +87,7 @@ void ShadowMapper::lightPass(glm::vec3 shadow_light_pos, glm::vec3 shadow_light_
 
 void ShadowMapper::attach(Shader &shader)
 {
-    shader.setUniform("shadowLimit", shadow_limit);
+    shader.setUniform("shadow_limit", shadow_limit);
     // glActiveTexture(GL_TEXTURE31);
     // glBindTexture(GL_TEXTURE_CUBE_MAP, depth_texture);
     // shader.setUniformi("shadow_map", 31);
