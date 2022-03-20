@@ -15,7 +15,10 @@ uniform sampler2D screen_rnd_tex;
 uniform float near;
 uniform float far;
 
-uniform float rnds[1024];
+layout (std140) uniform ub_common
+{
+    uniform float rnds[1024];
+};
 
 uniform mat4 model;
 uniform mat4 view;

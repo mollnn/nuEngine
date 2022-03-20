@@ -93,6 +93,11 @@ void Shader::setUniform(const std::string &name, const glm::mat4 &value)
     glUniformMatrix4fv(glGetUniformLocation(sp_, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
 }
 
+void Shader::setUniblock(const std::string &name, int idx)
+{
+    glUniformBlockBinding(sp_, glGetUniformBlockIndex(sp_, name.c_str()), idx);
+}
+
 void Shader::setLights(const std::vector<PointLight> &lights)
 {
     setUniformi("n_point_light", lights.size());

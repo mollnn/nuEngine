@@ -39,10 +39,13 @@ void main()
     float Ns = shininess;
     vec3 Ka = texture(texture_ambient1, vTex).xyz;
     if(usetex_ambient==0) Ka=color_ambient;
+    Ka = pow(Ka, vec3(2.2));
     vec3 Kd = texture(texture_diffuse1, vTex).xyz;
     if(usetex_diffuse==0) Kd=color_diffuse;
+    Kd = pow(Kd, vec3(2.2));
     vec3 Ks = texture(texture_specular1, vTex).xyz;
     if(usetex_specular==0) Ks=color_specular;
+    Ks = pow(Ks, vec3(2.2));
     gPosDepth = vec4(vPos, glPos.z / glPos.w);
     gNormal = vec4(vNormal, 1.0);
     gKa = vec4(Ka, 1.0);

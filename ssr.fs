@@ -13,7 +13,10 @@ uniform sampler2D gbuf5;
 uniform sampler2D film;
 uniform sampler2D screen_rnd_tex;
 
-uniform float rnds[1024];
+layout (std140) uniform ub_common
+{
+    uniform float rnds[1024];
+};
 
 uniform vec3 camera_pos;
 
@@ -54,11 +57,11 @@ vec3 worldToScreen(vec3 w)
 
 vec3 intersection(vec3 o, vec3 d)
 {
-    float s=0.01;
-    float a=0.001;
+    float s=0.02;
+    float a=0.005;
     vec3 p=o;
     float thickness=0.3;
-    for(int i=0;i<64;i++)
+    for(int i=0;i<32;i++)
     {
         p+=d*s;
         s+=a;
@@ -89,7 +92,7 @@ void main()
     
     float scrrnd = texture(screen_rnd_tex, vTex).x;
 
-    vec3 color = texture(film, vTex.xy).xyz;
+    vec3 color = vec3(0.0);
 
     vec3 p = vPos;
     vec3 n = normalize(vNormal);
@@ -124,17 +127,13 @@ void main()
                 vec3 Wi = normalize(Pl-Ps);
                 vec3 Wo = normalize(camera_pos-Ps);
                 vec3 h = normalize(Wi + Wo);
-                vec3 Ld = 1.0 / 3.14159 * Kd * Li * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
+                // vec3 Ld = 1.0 / 3.14159 * Kd * Li * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
                 vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Li * pow(max(0.0, dot(h, n)), Ns)  * (dot(Wo, n) > 0 ? 1.0 : 0.0);
-                color += (Ls + Ld) / N_SAMPLE / pdf;
+                color += (Ls) / N_SAMPLE / pdf;
                 // color = hitpos;
             }
         }
     }
 
-        //     vec3 p_screen = worldToScreen(p);
-        // float cursor_depth = p_screen.z * 2 - 1;
-        // float record_depth = texture(gbuf0, p_screen.xy).a;
-        // color = vec3(cursor_depth, record_depth, cursor_depth) * 0.5+0.5;
     FragColor = vec4(color, 1.0);
 }

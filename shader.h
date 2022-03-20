@@ -26,6 +26,7 @@ public:
     void setUniform(const std::string &name, float x, float y, float z);
     void setUniform(const std::string &name, const glm::vec3 &value);
     void setUniform(const std::string &name, const glm::mat4 &value);
+    void setUniblock(const std::string &name, int idx);
     void setLights(const std::vector<PointLight> &lights);
     void setMVP(const glm::mat4 &view, const glm::mat4 &projection);
     void setCamera(const Camera &camera);

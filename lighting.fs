@@ -1,9 +1,9 @@
 #version 330 core
 
 in vec2 vTex;
-
 out vec4 FragColor;
 
+// INPUTS
 uniform sampler2D gbuf0;
 uniform sampler2D gbuf1;
 uniform sampler2D gbuf2;
@@ -11,9 +11,6 @@ uniform sampler2D gbuf3;
 uniform sampler2D gbuf4;
 uniform sampler2D gbuf5;
 uniform sampler2D ao;
-uniform sampler2D screen_rnd_tex;
-
-uniform float rnds[1024];
 
 uniform samplerCube shadow_map;
 uniform samplerCube shadow_map_pos;
@@ -21,18 +18,24 @@ uniform samplerCube shadow_map_normal;
 uniform samplerCube shadow_map_flux;
 uniform float shadowLimit;
 
-uniform vec3 ambient;
 uniform vec3 camera_pos;
 
+uniform vec3 ambient;
 struct PointLight 
 {
     vec3 pos;
     vec3 val; // intensity
 };
-
 uniform int n_point_light;
 uniform PointLight point_light[4];
 
+// RANDOMS
+uniform sampler2D screen_rnd_tex;
+
+layout (std140) uniform ub_common
+{
+    uniform float rnds[1024];
+};
 
 float rndPseudoGaussian(float alpha)
 {
@@ -60,7 +63,6 @@ void main()
     
     int scrx = int(vTex.x * 640);
     int scry = int(vTex.y * 360);
-    int scrid = (scrx % 16) * 16 + scry % 16;
     float scrrnd = texture(screen_rnd_tex, vTex).x;
 
     vec3 color = ambient * Ka * (texture(ao, vTex).r);
@@ -166,13 +168,13 @@ void main()
         float dot1 = max(0.0, dot(sample_normal, dir_bounce));
         float dot2 = max(0.0, dot(normal, -dir_bounce));
         vec3 E = sample_flux / 3.14159 * dot1 * 1.0 / dist2_bounce;
-        vec3 Ei = E * weight;
+        vec3 Ei = E;
         vec3 Wi = -dir_bounce;
         vec3 Wo = normalize(camera_pos-Ps);
         vec3 h = normalize(Wi + Wo);
         vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
-        vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
-        rsm_contribution += Ld + Ls;
+        // vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Ei * pow(max(0.0, dot(h, n)), Ns) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
+        rsm_contribution += (Ld) * weight;
         sum_weight += weight;
     }
     rsm_contribution *= 4 * 3.14159 / sum_weight;

@@ -58,7 +58,6 @@ void init()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
-
 int main()
 {
     init();
@@ -70,7 +69,7 @@ int main()
     scene->addChildren(std::make_shared<PointLight>(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f)));
 
     SceneDesc scene_desc(scene);
-    scene_desc.ambient_light_irradiance = glm::vec3(0.2f, 0.2f, 0.2f);
+    scene_desc.ambient_light_irradiance = glm::vec3(0.2f, 0.2f, 0.25f);
 
     Camera main_camera;
     main_camera.aspect = 1.0f * screen_x / screen_y;
@@ -80,10 +79,7 @@ int main()
 
     ShadowMapper shadow_map_point_light;
 
-    Shader lighting_shader("../lighting.vs", "../lighting.fs");
-
-    Shader ssao_shader("../ssao.vs", "../ssao.fs");
-    Deferred deferred_renderer(screen_x, screen_y);
+    Deferred deferred(screen_x, screen_y);
 
     std::vector<float> rnds;
     std::uniform_real_distribution<GLfloat> random_float(0.0, 1.0);
@@ -94,6 +90,12 @@ int main()
         rnds.push_back(random_float(generator));
     }
 
+    GLuint ubo;
+    glGenBuffers(1, &ubo);
+    glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+    glBufferData(GL_UNIFORM_BUFFER, 4096, rnds.data(), GL_STATIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo);
+
     std::vector<float> screen_rnd;
     for (int i = 0; i < screen_x * screen_y * 3; i++)
     {
@@ -102,13 +104,19 @@ int main()
 
     Texture2D screen_rnd_tex(screen_x, screen_y, screen_rnd.data(), GL_RGB16F, GL_RGB, GL_FLOAT);
 
+    Shader ssao_shader("../ssao.vs", "../ssao.fs");
     Texture2D ssao_texture(screen_x, screen_y);
     FramebufferObject ssao_fbo({&ssao_texture}, screen_x, screen_y);
 
-    Texture2D film_tex(screen_x, screen_y);
-    FramebufferObject film_fbo({&film_tex}, screen_x, screen_y);
+    Shader lighting_shader("../lighting.vs", "../lighting.fs");
+    Texture2D lighting_tex(screen_x, screen_y);
+    FramebufferObject lighting_fbo({&lighting_tex}, screen_x, screen_y);
 
     Shader ssr_shader("../ssr.vs", "../ssr.fs");
+    Texture2D ssr_tex(screen_x, screen_y);
+    FramebufferObject ssr_fbo({&ssr_tex}, screen_x, screen_y);
+
+    Shader post_shader("../post.vs", "../post.fs");
 
     Profiler profiler;
 
@@ -126,7 +134,7 @@ int main()
         glViewport(0, 0, screen_x, screen_y);
 
         // GEOMETRY STAGE
-        deferred_renderer.drawGeometry(&scene_desc.models, main_camera);
+        deferred.drawGeometry(&scene_desc.models, main_camera);
         profiler.tick("geometry");
 
         // SSAO STAGE
@@ -134,47 +142,50 @@ int main()
         ssao_shader.use();
         ssao_shader.setCamera(main_camera);
         ssao_shader.setTexture("screen_rnd_tex", &screen_rnd_tex);
+        ssao_shader.setUniblock("ub_common", 1);
 
-        for (int i = 0; i < 256; i++)
-        {
-            ssao_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
-        }
-        deferred_renderer.drawLighting(ssao_shader);
+        deferred.drawLighting(ssao_shader);
 
         profiler.tick("ssao.ao");
 
         // LIGHTING STAGE
-        film_fbo.use();
+        lighting_fbo.use();
         lighting_shader.use();
         lighting_shader.setLights(scene_desc.point_lights);
         lighting_shader.setCamera(main_camera);
         lighting_shader.setTexture("screen_rnd_tex", &screen_rnd_tex);
         lighting_shader.setUniform("ambient", scene_desc.ambient_light_irradiance);
-        for (int i = 0; i < 256; i++)
-        {
-            lighting_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
-        }
+        lighting_shader.setUniblock("ub_common", 1);
+
         shadow_map_point_light.attach(lighting_shader);
         lighting_shader.setTexture("ao", &ssao_texture);
-        deferred_renderer.drawLighting(lighting_shader);
+        deferred.drawLighting(lighting_shader);
 
         profiler.tick("lighting");
 
         // SSR STAGE
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        ssr_fbo.use();
         ssr_shader.use();
         ssr_shader.setCamera(main_camera);
-        ssr_shader.setTexture("film", &film_tex);
+        ssr_shader.setTexture("film", &lighting_tex);
         ssr_shader.setTexture("screen_rnd_tex", &screen_rnd_tex);
+        ssr_shader.setUniblock("ub_common", 1);
 
-        for (int i = 0; i < 256; i++)
-        {
-            ssr_shader.setUniform("rnds[" + std::to_string(i) + "]", rnds[i]);
-        }
-        deferred_renderer.drawLighting(ssr_shader);
+        deferred.drawLighting(ssr_shader);
 
         profiler.tick("ssreflect");
+
+        // POST PROCESSING
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        post_shader.setTexture("lighting", &lighting_tex);
+        post_shader.setTexture("ssr", &ssr_tex);
+        post_shader.setUniblock("ub_common", 1);
+
+        deferred.drawLighting(post_shader);
+
+        profiler.tick("postproc");
+
         glfwSwapBuffers(window);
 
         profiler.end();

@@ -26,6 +26,7 @@ void main()
 
     vec3 Kd = texture(texture_diffuse1, vTex).xyz;
     if(usetex_diffuse==0) Kd=color_diffuse;
+    Kd = pow(Kd, vec3(2.2));
 
     vec3 Pl = lightPos;
     vec3 Ps = vPos;
