@@ -16,8 +16,9 @@
 #include "shader.h"
 #include "material.h"
 #include "mesh.h"
+#include "object.h"
 
-class Model
+class Model: public Object
 {
     std::vector<Mesh> meshes;
     void loadModelAssimp(const std::string &filename);

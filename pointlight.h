@@ -10,8 +10,9 @@
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include "object.h"
 
-struct PointLight
+struct PointLight: public Object
 {
     glm::vec3 intensity;
     glm::vec3 position;

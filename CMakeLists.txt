@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
-project(GLFW_test)
+project(nuEngine)
 include_directories(include)
 find_package(glfw3 REQUIRED)
-file(GLOB project_file glad.c main.cpp pointlight.cpp camera.cpp cameracontrol.cpp shader.cpp texture2d.cpp texture_cube.cpp texture.cpp material.cpp mesh.cpp model.cpp deferred.cpp shadow_mapper.cpp framebuffer_object.cpp)
+file(GLOB project_file glad.c main.cpp pointlight.cpp camera.cpp cameracontrol.cpp shader.cpp texture2d.cpp texture_cube.cpp texture.cpp material.cpp mesh.cpp model.cpp deferred.cpp shadow_mapper.cpp framebuffer_object.cpp profiler.cpp callbacks.cpp object.cpp scenedesc.cpp)
 add_executable(${PROJECT_NAME} ${project_file})
 
 target_link_libraries(${PROJECT_NAME}
