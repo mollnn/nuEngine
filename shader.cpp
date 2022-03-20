@@ -133,8 +133,7 @@ void Shader::solveTextures()
     int idx = 0;
     for (auto &[k, v] : textures)
     {
-        glActiveTexture(GL_TEXTURE0 + idx);
-        glBindTexture(GL_TEXTURE_2D, v->id());
+        v->use(idx);
         setUniformi(k, idx);
         idx++;
     }
