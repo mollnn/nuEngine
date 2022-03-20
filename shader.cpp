@@ -106,6 +106,7 @@ void Shader::setLights(const std::vector<PointLight> &lights)
         auto &light = lights[i];
         setUniform("point_light[" + std::to_string(i) + "].pos", light.position);
         setUniform("point_light[" + std::to_string(i) + "].val", light.intensity);
+        setUniform("point_light[" + std::to_string(i) + "].width", light.width);
     }
 }
 

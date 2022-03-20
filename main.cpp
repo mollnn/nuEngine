@@ -65,11 +65,11 @@ int main()
     auto scene = std::make_shared<Object>();
     scene->addChildren(std::make_shared<Model>("mitsuba.obj"));
     scene->addChildren(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-2.0f, 0.7f, 0.0f)));
-    scene->addChildren(std::make_shared<PointLight>(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-15.0f, 10.0f, 0.0f)));
-    scene->addChildren(std::make_shared<PointLight>(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f)));
+    scene->addChildren(std::make_shared<PointLight>(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-15.0f, 10.0f, 0.0f), 1.0f));
+    scene->addChildren(std::make_shared<PointLight>(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f), 1.0f));
 
     SceneDesc scene_desc(scene);
-    scene_desc.ambient_light_irradiance = glm::vec3(0.2f, 0.2f, 0.25f);
+    scene_desc.ambient_light_irradiance = glm::vec3(0.10f, 0.12f, 0.15f);
 
     Camera main_camera;
     main_camera.aspect = 1.0f * screen_x / screen_y;
@@ -84,6 +84,13 @@ int main()
     std::vector<float> rnds;
     std::uniform_real_distribution<GLfloat> random_float(0.0, 1.0);
     std::default_random_engine generator;
+    std::vector<float> screen_rnd;
+    
+    for (int i = 0; i < screen_x * screen_y; i++)
+    {
+        screen_rnd.push_back(random_float(generator));
+    }
+    Texture2D screen_rnd_tex(screen_x, screen_y, screen_rnd.data(), GL_R16F, GL_RED, GL_FLOAT);
 
     for (int i = 0; i < 1024; i++)
     {
@@ -96,13 +103,6 @@ int main()
     glBufferData(GL_UNIFORM_BUFFER, 4096, rnds.data(), GL_STATIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo);
 
-    std::vector<float> screen_rnd;
-    for (int i = 0; i < screen_x * screen_y * 3; i++)
-    {
-        screen_rnd.push_back(random_float(generator));
-    }
-
-    Texture2D screen_rnd_tex(screen_x, screen_y, screen_rnd.data(), GL_RGB16F, GL_RGB, GL_FLOAT);
 
     Shader ssao_shader("../ssao.vs", "../ssao.fs");
     Texture2D ssao_texture(screen_x, screen_y);
@@ -111,6 +111,10 @@ int main()
     Shader lighting_shader("../lighting.vs", "../lighting.fs");
     Texture2D lighting_tex(screen_x, screen_y);
     FramebufferObject lighting_fbo({&lighting_tex}, screen_x, screen_y);
+
+    Shader rsm_shader("../rsm.vs", "../rsm.fs");
+    Texture2D rsm_tex(screen_x, screen_y);
+    FramebufferObject rsm_fbo({&rsm_tex}, screen_x, screen_y);
 
     Shader ssr_shader("../ssr.vs", "../ssr.fs");
     Texture2D ssr_tex(screen_x, screen_y);
@@ -127,7 +131,7 @@ int main()
 
         profiler.begin();
 
-        // GEN SHADOW
+        // SHADOW STAGE
         shadow_map_point_light.lightPass(scene_desc.point_lights[0].position, scene_desc.point_lights[0].intensity, &scene_desc.models);
         profiler.tick("shadow");
 
@@ -152,9 +156,9 @@ int main()
         lighting_fbo.use();
         lighting_shader.use();
         lighting_shader.setLights(scene_desc.point_lights);
+        lighting_shader.setUniform("ambient", scene_desc.ambient_light_irradiance);
         lighting_shader.setCamera(main_camera);
         lighting_shader.setTexture("screen_rnd_tex", &screen_rnd_tex);
-        lighting_shader.setUniform("ambient", scene_desc.ambient_light_irradiance);
         lighting_shader.setUniblock("ub_common", 1);
 
         shadow_map_point_light.attach(lighting_shader);
@@ -162,6 +166,20 @@ int main()
         deferred.drawLighting(lighting_shader);
 
         profiler.tick("lighting");
+
+        // RSM STAGE
+        rsm_fbo.use();
+        rsm_shader.use();
+        rsm_shader.setLights(scene_desc.point_lights);
+        rsm_shader.setUniform("ambient", scene_desc.ambient_light_irradiance);
+        rsm_shader.setCamera(main_camera);
+        rsm_shader.setTexture("screen_rnd_tex", &screen_rnd_tex);
+        rsm_shader.setUniblock("ub_common", 1);
+        shadow_map_point_light.attach(rsm_shader);
+
+        deferred.drawLighting(rsm_shader);
+
+        profiler.tick("reflectsm");
 
         // SSR STAGE
         ssr_fbo.use();
@@ -179,6 +197,7 @@ int main()
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         post_shader.setTexture("lighting", &lighting_tex);
+        post_shader.setTexture("rsm", &rsm_tex);
         post_shader.setTexture("ssr", &ssr_tex);
         post_shader.setUniblock("ub_common", 1);
 

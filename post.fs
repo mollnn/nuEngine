@@ -6,6 +6,7 @@ out vec4 FragColor;
 
 uniform sampler2D lighting;
 uniform sampler2D ssr;
+uniform sampler2D rsm;
 
 layout (std140) uniform ub_common
 {
@@ -25,8 +26,9 @@ void main()
 {
     vec3 radiance_lighting = texture(lighting, vTex).xyz;
     vec3 radiance_ssr = texture(ssr, vTex).xyz;
+    vec3 radiance_rsm = texture(rsm, vTex).xyz;
 
-    vec3 radiance = radiance_lighting + radiance_ssr;
+    vec3 radiance = radiance_lighting + radiance_rsm + radiance_ssr;
     vec3 color = pow(radiance, vec3(1.0 / 2.2));
 
     FragColor = vec4(color, 1.0);

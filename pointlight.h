@@ -16,8 +16,9 @@ struct PointLight: public Object
 {
     glm::vec3 intensity;
     glm::vec3 position;
+    float width;
 
-    PointLight(const glm::vec3 &i, const glm::vec3 &p);
+    PointLight(const glm::vec3 &i, const glm::vec3 &p, float w = 0.1f);
 };
 
 
