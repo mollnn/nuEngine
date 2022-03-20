@@ -15,7 +15,7 @@ class Profiler
     double frame_start, last_tick;
     int idx;
     double alpha = 0.5;
-    double beta = 0.8;
+    double beta = 0.9;
 
 public:
     void begin();

@@ -30,10 +30,13 @@ void main()
 
     vec3 Pl = lightPos;
     vec3 Ps = vPos;
-    vec3 Ei = lightInt / dot(Pl-Ps, Pl-Ps);
-    vec3 Wi = normalize(Pl - Ps);
-    vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, dot(Wi, n));
-    float A = 1.0 * dot(Pl-Ps, Pl-Ps) / max(1e-6, dot(Wi, n));   // w0 is eliminated
+    vec3 Psl = Pl-Ps;
+    float dsl = length(Psl);
+    vec3 Ei = lightInt / dsl / dsl;
+    vec3 Wi = Psl / dsl;
+    float cosWi = dot(Wi, n);
+    vec3 Ld = 1.0 / 3.14159 * Kd * Ei * max(0.0, cosWi);
+    float A = 1.0 * dsl * dsl / max(1e-6, cosWi);   // w0 is eliminated
     vec3 Phi = Ld * 3.14159 * A;
 
     gFlux = Phi;

@@ -54,11 +54,10 @@ void main()
 
     float occ=1;
     float radius = 0.5;
-    int N_SAMPLE = 16;
+    int N_SAMPLE = 4;
 
     int scrx = int(vTex.x * 640);
     int scry = int(vTex.y * 360);
-    int scrid = (scrx % 16) * 16 + scry % 16;
     float scrrnd = texture(screen_rnd_tex, vTex).x;
 
     for(int i=0;i<N_SAMPLE;i++)

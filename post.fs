@@ -24,9 +24,19 @@ uniform float far;
 
 void main()
 {
+    int screen_width = 640;
+    int screen_height = 360;
+
     vec3 radiance_lighting = texture(lighting, vTex).xyz;
     vec3 radiance_ssr = texture(ssr, vTex).xyz;
-    vec3 radiance_rsm = texture(rsm, vTex).xyz;
+    vec3 radiance_rsm = texture(rsm, vTex).xyz * 0.1;
+    for(int i=-1;i<=1;i++)
+    {
+        for(int j=-1;j<=1;j++)
+        {
+            radiance_rsm += texture(rsm, vTex + vec2(i,j) / vec2(screen_width, screen_height)).xyz * 0.1;
+        }
+    }
 
     vec3 radiance = radiance_lighting + radiance_rsm + radiance_ssr;
     vec3 color = pow(radiance, vec3(1.0 / 2.2));

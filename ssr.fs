@@ -98,22 +98,36 @@ void main()
     vec3 n = normalize(vNormal);
     vec3 wo = normalize(camera_pos - p);
 
-    int N_SAMPLE = 4;
+    int N_SAMPLE = 1;
     for(int i=0;i<N_SAMPLE;i++)
     {
-        vec3 ax1 = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
-        vec3 ax2 = cross(n, ax1);
-        float r1 = rnds[2*i+0];
-        float r2 = rnds[2*i+1];
-        r1 += scrrnd;
-        if(r1>=1.0) r1-=1.0;
-        r2 += scrrnd;
-        if(r2>=1.0) r2-=1.0;
-        float cos_theta = pow(r1, 1.0 / (Ns + 2.0));
-        float sin_theta = sqrt(1 - cos_theta);
-        float phi = 2.0 * 3.14159 * r2;
-        vec3 h = cos_theta * n + sin_theta * cos(phi) * ax1 + sin_theta * sin(phi) * ax2;
-        float pdf = (Ns + 2.0) / 8 / 3.14159 * pow(max(0.0, dot(h, n)), Ns + 1.0);
+        vec3 h, f;
+        float pdf;
+        if(Ns<1000)
+        {
+            // glossy
+            vec3 ax1 = normalize(dot(vec3(1.0, 0.0, 0.0), n) > 0.5 ? cross(vec3(0.0, 1.0, 0.0), n) : cross(vec3(1.0, 0.0, 0.0), n));
+            vec3 ax2 = cross(n, ax1);
+            float r1 = rnds[2*i+0];
+            float r2 = rnds[2*i+1];
+            r1 += scrrnd;
+            if(r1>=1.0) r1-=1.0;
+            r2 += scrrnd;
+            if(r2>=1.0) r2-=1.0;
+            float cos_theta = pow(r1, 1.0 / (Ns + 2.0));
+            float sin_theta = sqrt(1 - cos_theta);
+            float phi = 2.0 * 3.14159 * r2;
+            h = cos_theta * n + sin_theta * cos(phi) * ax1 + sin_theta * sin(phi) * ax2;
+            f = (Ns + 2.0) / 8 / 3.14159 * Ks * pow(max(0.0, dot(h, n)), Ns);
+            pdf = (Ns + 2.0) / 8 / 3.14159 * pow(max(0.0, dot(h, n)), Ns + 1);
+        }
+        else
+        {
+            // specular
+            h = n;
+            f = Ks;
+            pdf = 1.0;
+        }
         vec3 wi = reflect(-wo, h);
         vec3 hitpos = intersection(p, wi);
         if(length(hitpos)<1e18)
@@ -128,7 +142,7 @@ void main()
                 vec3 Wo = normalize(camera_pos-Ps);
                 vec3 h = normalize(Wi + Wo);
                 // vec3 Ld = 1.0 / 3.14159 * Kd * Li * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
-                vec3 Ls = (Ns + 2.0) / 8 / 3.14159 * Ks * Li * pow(max(0.0, dot(h, n)), Ns)  * (dot(Wo, n) > 0 ? 1.0 : 0.0);
+                vec3 Ls = f * (dot(Wo, n) > 0 ? 1.0 : 0.0) * Li;
                 color += (Ls) / N_SAMPLE / pdf;
                 // color = hitpos;
             }

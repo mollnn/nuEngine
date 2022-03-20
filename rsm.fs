@@ -57,10 +57,10 @@ void main()
 {
     vec3 vPos = texture(gbuf0, vTex).xyz;
     vec3 vNormal = texture(gbuf1, vTex).xyz;
-    vec3 Ka = texture(gbuf2, vTex).xyz;
+    // vec3 Ka = texture(gbuf2, vTex).xyz;
     vec3 Kd = texture(gbuf3, vTex).xyz;
-    vec3 Ks = texture(gbuf4, vTex).xyz;
-    float Ns = texture(gbuf5, vTex).x;
+    // vec3 Ks = texture(gbuf4, vTex).xyz;
+    // float Ns = texture(gbuf5, vTex).x;
     
     int scrx = int(vTex.x * 640);
     int scry = int(vTex.y * 360);
@@ -73,7 +73,8 @@ void main()
     // RSM 
     vec3 rsm_contribution = vec3(0.0,0.0,0.0);
     float sum_weight=0;
-    for(int i=0;i<16;i++)
+    const int N_SAMPLE = 8;
+    for(int i=0;i<N_SAMPLE;i++)
     {
         vec3 dist_receiver = normalize(vPos - point_light[0].pos);
         float cos_theta = rnds[i*3] * 2 - 1;
