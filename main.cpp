@@ -21,6 +21,7 @@
 #include "profiler.h"
 #include "callbacks.h"
 #include "scenedesc.h"
+#include "uniform_buffer.h"
 
 const int screen_x = 1920, screen_y = 1080;
 
@@ -58,26 +59,27 @@ void init()
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
+
 int main()
 {
     init();
 
     Scene scene;
     scene.add(std::make_shared<Model>("sponza/sponza.obj"), glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
-    scene.add(std::make_shared<PointLight>(glm::vec3(17.0f, 13.0f, 4.0f) * 10.0f, glm::vec3(0.0f, 8.0f, 0.0f), 5.0f));
+    scene.add(std::make_shared<PointLight>(glm::vec3(17.0f, 13.0f, 4.0f) * 100.0f, glm::vec3(0.0f, 20.0f, -3.0f), 3.0f));
     // scene.add(std::make_shared<Model>("mitsuba.obj"));
     // scene.add(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-1.8f, 0.7f, 0.0f)));
     // scene.add(std::make_shared<PointLight>(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-15.0f, 10.0f, 0.0f), 1.0f));
     // scene.add(std::make_shared<PointLight>(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f), 1.0f));
-    scene.ambient_light_irradiance = glm::vec3(0.10f, 0.10f, 0.10f);
+    scene.ambient_light_irradiance = glm::vec3(0.06f, 0.08f, 0.10f);
 
     SceneDesc scene_desc(scene);
 
-    Camera main_camera;
-    main_camera.aspect = 1.0f * screen_x / screen_y;
+    Camera active_camera;
+    active_camera.aspect = 1.0f * screen_x / screen_y;
 
     CameraControl camera_control;
-    camera_control.bind(&main_camera);
+    camera_control.bind(&active_camera);
 
     ShadowMapper shadow_map_point_light;
 
@@ -99,11 +101,9 @@ int main()
         rnds.push_back(random_float(generator));
     }
 
-    GLuint ubo;
-    glGenBuffers(1, &ubo);
-    glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-    glBufferData(GL_UNIFORM_BUFFER, 4096, rnds.data(), GL_STATIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 1, ubo);
+    UniformBuffer rnd_ubo;
+    rnd_ubo.setData(4096, rnds.data(), GL_STATIC_DRAW);
+    rnd_ubo.use(1);
 
     Shader ssao_shader("../ssao.vs", "../ssao.fs");
     Texture2D ssao_texture(screen_x, screen_y);
@@ -122,8 +122,6 @@ int main()
     FramebufferObject ssr_fbo({&ssr_tex}, screen_x, screen_y);
 
     Shader post_shader("../post.vs", "../post.fs");
-
-    Profiler profiler;
 
     lighting_shader.use();
     lighting_shader.setTexture("screen_rnd_tex", &screen_rnd_tex);
@@ -153,57 +151,48 @@ int main()
     {
         glfwPollEvents();
         camera_control.onEvents();
-        profiler.begin();
 
         // SHADOW STAGE
         shadow_map_point_light.lightPass(scene_desc.point_lights[0].position, scene_desc.point_lights[0].intensity, &scene_desc.models);
-        profiler.tick("shadow");
         glViewport(0, 0, screen_x, screen_y);
 
         // GEOMETRY STAGE
-        deferred.drawGeometry(&scene_desc.models, main_camera);
-        profiler.tick("geometry");
+        deferred.drawGeometry(&scene_desc.models, active_camera);
 
         // SSAO STAGE
         ssao_fbo.use();
         ssao_shader.use();
-        ssao_shader.setCamera(main_camera);
+        ssao_shader.setCamera(active_camera);
         deferred.drawLighting(ssao_shader);
-        profiler.tick("ssao.ao");
 
         // LIGHTING STAGE
         lighting_fbo.use();
         lighting_shader.use();
         lighting_shader.setLights(scene_desc.point_lights);
         lighting_shader.setUniform("ambient", scene_desc.ambient_light_irradiance);
-        lighting_shader.setCamera(main_camera);
+        lighting_shader.setCamera(active_camera);
         deferred.drawLighting(lighting_shader);
-        profiler.tick("lighting");
 
         // RSM STAGE
         rsm_fbo.use();
         rsm_shader.use();
         rsm_shader.setLights(scene_desc.point_lights);
         rsm_shader.setUniform("ambient", scene_desc.ambient_light_irradiance);
-        rsm_shader.setCamera(main_camera);
+        rsm_shader.setCamera(active_camera);
         deferred.drawLighting(rsm_shader);
-        profiler.tick("reflectsm");
 
         // SSR STAGE
         ssr_fbo.use();
         ssr_shader.use();
-        ssr_shader.setCamera(main_camera);
+        ssr_shader.setCamera(active_camera);
         deferred.drawLighting(ssr_shader);
-        profiler.tick("ssreflect");
 
         // POST PROCESSING
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         deferred.drawLighting(post_shader);
-        profiler.tick("postproc");
 
         glfwSwapBuffers(window);
-        profiler.end();
     }
 
     glfwTerminate();
