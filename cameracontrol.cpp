@@ -34,14 +34,14 @@ void CameraControl::onEvents()
     last_cursor_x = mouse_x;
     last_cursor_y = mouse_y;
 
-    GLfloat cam_speed = 0.5f;
+    GLfloat cam_speed = 1.0f;
     GLfloat cam_pan_speed = 0.005f;
-    GLfloat cam_rotate_speed = 1.0f;
+    GLfloat cam_rotate_speed = 0.2f;
 
     if (key_status[GLFW_KEY_LEFT_ALT] && mouse_button_status[0])
     {
         pitch += -89.0f * delta_cursor_y * cam_rotate_speed / 512;
-        yaw += 540.0f * delta_cursor_x * cam_rotate_speed / 512;
+        yaw += 1080.0f * delta_cursor_x * cam_rotate_speed / 512;
 
         if (pitch > 89.0f)
             pitch = 89.0f;

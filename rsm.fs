@@ -62,8 +62,8 @@ void main()
     // vec3 Ks = texture(gbuf4, v_texcoord).xyz;
     // float Ns = texture(gbuf5, v_texcoord).x;
     
-    int scrx = int(v_texcoord.x * 960);
-    int scry = int(v_texcoord.y * 540);
+    int scrx = int(v_texcoord.x * 1920);
+    int scry = int(v_texcoord.y * 1080);
     float scrrnd = texture(screen_rnd_tex, v_texcoord).x;
 
     vec3 color = vec3(0.0);
@@ -73,7 +73,7 @@ void main()
     // RSM 
     vec3 rsm_contribution = vec3(0.0,0.0,0.0);
     float sum_weight=0;
-    const int N_SAMPLE = 8;
+    const int N_SAMPLE = 2;
     for(int i=0;i<N_SAMPLE;i++)
     {
         vec3 dist_receiver = normalize(v_pos - point_light[0].pos);

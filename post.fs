@@ -24,8 +24,8 @@ uniform float far;
 
 void main()
 {
-    int screen_width = 960;
-    int screen_height = 540;
+    int screen_width = 1920;
+    int screen_height = 1080;
 
     vec3 radiance_lighting = texture(lighting, v_texcoord).xyz;
     vec3 radiance_ssr = texture(ssr, v_texcoord).xyz;

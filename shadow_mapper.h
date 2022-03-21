@@ -23,7 +23,7 @@
 
 struct ShadowMapper
 {
-    const GLuint SHADOW_MAP_WIDTH = 512, SHADOW_MAP_HEIGHT = 512;
+    const GLuint SHADOW_MAP_WIDTH = 1024, SHADOW_MAP_HEIGHT = 1024;
     Shader shadow_shader;
     TextureCube depth_texture;
     TextureCube pos_texture;

@@ -62,8 +62,8 @@ void main()
     vec3 Ks = texture(gbuf4, v_texcoord).xyz;
     float Ns = texture(gbuf5, v_texcoord).x;
     
-    int scrx = int(v_texcoord.x * 960);
-    int scry = int(v_texcoord.y * 540);
+    int scrx = int(v_texcoord.x * 1920);
+    int scry = int(v_texcoord.y * 1080);
     float scrrnd = texture(screen_rnd_tex, v_texcoord).x;
 
     vec3 color = ambient * Ka * (texture(ao, v_texcoord).r);

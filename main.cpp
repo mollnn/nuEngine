@@ -22,7 +22,7 @@
 #include "callbacks.h"
 #include "scenedesc.h"
 
-const int screen_x = 960, screen_y = 540;
+const int screen_x = 1920, screen_y = 1080;
 
 extern bool key_status[512];
 extern float mouse_x, mouse_y;

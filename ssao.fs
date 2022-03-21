@@ -56,8 +56,8 @@ void main()
     float radius = 0.5;
     int N_SAMPLE = 4;
 
-    int scrx = int(v_texcoord.x * 960);
-    int scry = int(v_texcoord.y * 540);
+    int scrx = int(v_texcoord.x * 1920);
+    int scry = int(v_texcoord.y * 1080);
     float scrrnd = texture(screen_rnd_tex, v_texcoord).x;
 
     for(int i=0;i<N_SAMPLE;i++)
