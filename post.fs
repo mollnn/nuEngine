@@ -39,6 +39,7 @@ void main()
     }
 
     vec3 radiance = radiance_lighting + radiance_rsm + radiance_ssr;
+    // radiance = radiance_rsm;
     vec3 color = pow(radiance, vec3(1.0 / 2.2));
 
     FragColor = vec4(color, 1.0);

@@ -57,11 +57,11 @@ vec3 worldToScreen(vec3 w)
 
 vec3 intersection(vec3 o, vec3 d)
 {
-    float s=0.02;
-    float a=0.005;
+    float s=0.01;
+    float a=0.002;
     vec3 p=o;
-    float thickness=0.3;
-    for(int i=0;i<32;i++)
+    float thickness=0.2;
+    for(int i=0;i<64;i++)
     {
         p+=d*s;
         s+=a;

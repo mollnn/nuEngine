@@ -1,12 +1,25 @@
 #include "material.h"
 
+std::map<std::string, Texture2D *> Material::texture_pool;
+
 void Material::loadTexturesAssimpType(aiTextureType type, const std::string &type_name, aiMaterial *mat, const std::string &dir)
 {
     for (int i = 0; i < mat->GetTextureCount(type); i++)
     {
         aiString filename;
         mat->GetTexture(type, i, &filename);
-        Texture2D *texture = new Texture2D(filename.C_Str());
+        std::cout << "fn=" << dir + filename.C_Str() << std::endl;
+        std::string full_name = dir + filename.C_Str();
+        Texture2D *texture;
+        if (texture_pool.find(full_name) == texture_pool.end())
+        {
+            texture = new Texture2D(full_name);
+            texture_pool[full_name] = texture;
+        }
+        else
+        {
+            texture = texture_pool[full_name];
+        }
         textures[type_name + std::to_string(i + 1)] = texture;
         std::string flag_name = "usetex" + type_name.substr(7);
         properties_i[flag_name] = 1;
@@ -15,6 +28,7 @@ void Material::loadTexturesAssimpType(aiTextureType type, const std::string &typ
 
 void Material::loadTexturesAssimp(aiMaterial *mat, const std::string &dir)
 {
+    std::cout << "dir=" << dir << std::endl;
     float t;
     if (AI_SUCCESS != mat->Get(AI_MATKEY_SHININESS, t))
         t = 1.0f;

@@ -22,8 +22,9 @@ class Material
     std::map<std::string, float> properties_f;
     std::map<std::string, glm::vec3> properties_v3;
 
-    void loadTexturesAssimpType(aiTextureType type, const std::string &type_name, aiMaterial *mat, const std::string &dir = "");
+    static std::map<std::string, Texture2D*> texture_pool;
 
+    void loadTexturesAssimpType(aiTextureType type, const std::string &type_name, aiMaterial *mat, const std::string &dir = "");
     void loadTexturesAssimp(aiMaterial *mat, const std::string &dir = "");
 
 public:
@@ -35,5 +36,7 @@ public:
 
     void use(Shader &shader);
 };
+
+
 
 #endif

@@ -27,12 +27,12 @@ class Mesh
     GLuint ebo_;
     int n_;
 
-    void loadMeshAssimp(aiMesh *mesh, const aiScene *scene);
+    void loadMeshAssimp(aiMesh *mesh, const aiScene *scene, const std::string& dir);
 
 public:
     Mesh();
 
-    Mesh(aiMesh *mesh, const aiScene *scene);
+    Mesh(aiMesh *mesh, const aiScene *scene, const std::string& dir = "");
 
     void draw(Shader &shader);
 };

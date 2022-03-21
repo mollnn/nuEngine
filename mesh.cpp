@@ -1,6 +1,6 @@
 #include "mesh.h"
 
-void Mesh::loadMeshAssimp(aiMesh *mesh, const aiScene *scene)
+void Mesh::loadMeshAssimp(aiMesh *mesh, const aiScene *scene, const std::string &dir)
 {
     for (int j = 0; j < mesh->mNumVertices; j++)
     {
@@ -31,7 +31,7 @@ void Mesh::loadMeshAssimp(aiMesh *mesh, const aiScene *scene)
         }
     }
 
-    material_.load(scene->mMaterials[mesh->mMaterialIndex]);
+    material_.load(scene->mMaterials[mesh->mMaterialIndex], dir);
 
     n_ = vertices_.size();
     glGenVertexArrays(1, &vao_);
@@ -54,9 +54,9 @@ Mesh::Mesh()
 {
 }
 
-Mesh::Mesh(aiMesh *mesh, const aiScene *scene)
+Mesh::Mesh(aiMesh *mesh, const aiScene *scene, const std::string &dir)
 {
-    loadMeshAssimp(mesh, scene);
+    loadMeshAssimp(mesh, scene, dir);
 }
 
 void Mesh::draw(Shader &shader)

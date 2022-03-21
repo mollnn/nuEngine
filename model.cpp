@@ -9,11 +9,12 @@ void Model::loadModelAssimp(const std::string &filename)
         std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
         return;
     }
+    std::string dir = filename.substr(0, filename.find_last_of('/') + 1);
     std::function<void(aiNode *, const aiScene *)> solve = [&](aiNode *node, const aiScene *scene)
     {
         for (int i = 0; i < node->mNumMeshes; i++)
         {
-            meshes.push_back(Mesh(scene->mMeshes[node->mMeshes[i]], scene));
+            meshes.push_back(Mesh(scene->mMeshes[node->mMeshes[i]], scene, dir));
         }
         for (int i = 0; i < node->mNumChildren; i++)
         {

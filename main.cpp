@@ -63,11 +63,13 @@ int main()
     init();
 
     Scene scene;
-    scene.add(std::make_shared<Model>("mitsuba.obj"));
-    scene.add(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-1.8f, 0.7f, 0.0f)));
-    scene.add(std::make_shared<PointLight>(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-15.0f, 10.0f, 0.0f), 1.0f));
-    scene.add(std::make_shared<PointLight>(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f), 1.0f));
-    scene.ambient_light_irradiance = glm::vec3(0.10f, 0.12f, 0.15f);
+    scene.add(std::make_shared<Model>("sponza/sponza.obj"), glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
+    scene.add(std::make_shared<PointLight>(glm::vec3(17.0f, 12.0f, 4.0f) * 0.2f, glm::vec3(0.0f, 10.0f, 0.0f), 1.0f));
+    // scene.add(std::make_shared<Model>("mitsuba.obj"));
+    // scene.add(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-1.8f, 0.7f, 0.0f)));
+    // scene.add(std::make_shared<PointLight>(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-15.0f, 10.0f, 0.0f), 1.0f));
+    // scene.add(std::make_shared<PointLight>(glm::vec3(50.0f, 30.1f, 0.1f), glm::vec3(0.5f, 0.3f, 10.0f), 1.0f));
+    scene.ambient_light_irradiance = glm::vec3(0.10f, 0.10f, 0.10f);
 
     SceneDesc scene_desc(scene);
 

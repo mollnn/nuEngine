@@ -87,7 +87,7 @@ void main()
         vec3 b = cross(n, t);
         vec3 bias = r * (sin_theta*cos(phi)*t + sin_theta*sin(phi)*b + cos_theta*n);
 
-        vec3 dir = dist_receiver + bias * 3.0;
+        vec3 dir = dist_receiver + bias * 1.0;
         dir = normalize(dir);
         float weight = min(1.0, dot(dir-dist_receiver, dir-dist_receiver));
         vec3 sample_pos = texture(shadow_map_pos, dir).xyz;

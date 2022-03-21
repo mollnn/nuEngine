@@ -3,8 +3,8 @@
 Camera::Camera()
 {
     cam_pos.x = 0;
-    cam_pos.y = 0.5;
-    cam_pos.z = 4;
+    cam_pos.y = 3;
+    cam_pos.z = 0;
     cam_dir.z = -1;
     cam_up.y = 1;
     eval();

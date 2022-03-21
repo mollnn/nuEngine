@@ -48,8 +48,8 @@ void main()
     Ks = pow(Ks, vec3(2.2));
     gbuf_posdepth = vec4(v_pos, v_pos4.z / v_pos4.w);
     gbuf_normal = vec4(v_normal, 1.0);
-    gbuf_Ka = vec4(Ka, 1.0);
-    gbuf_Kd = vec4(Kd, 1.0);
+    gbuf_Ka = vec4(Ka + 0.2, 1.0);
+    gbuf_Kd = vec4(Kd + 0.2, 1.0);
     gbuf_Ks = vec4(Ks, 1.0);
     gbuf_Ns = vec4(Ns,Ns,Ns,Ns);
 }
