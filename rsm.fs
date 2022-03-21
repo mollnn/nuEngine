@@ -69,6 +69,7 @@ void main() {
     vec3 rsm_contribution = vec3(0.0, 0.0, 0.0);
     float sum_weight = 0;
     const int N_SAMPLE = 4;
+    vec3 normal = normalize(g_normal);
     for(int i = 0; i < N_SAMPLE; i++) {
         vec3 dir_receiver = normalize(g_pos - point_light[0].pos);
         // float cos_theta = rnds[i * 3] * 2 - 1;
@@ -104,13 +105,12 @@ void main() {
 
         vec3 bias = abs(r) * normalize(vec3(rx, ry, rz));
 
-        vec3 dir = dir_receiver + bias * 3.0;
+        vec3 dir = dir_receiver + bias * 2.0;
         dir = normalize(dir);
         float weight = min(1.0, dot(dir - dir_receiver, dir - dir_receiver));
         vec3 sample_pos = texture(shadow_map_pos, dir).xyz;
         vec3 sample_normal = texture(shadow_map_normal, dir).xyz;
         vec3 sample_flux = texture(shadow_map_flux, dir).xyz;
-        vec3 normal = normalize(g_normal);
         float dist2_bounce = dot(g_pos - sample_pos, g_pos - sample_pos) + 1e-6;
         vec3 dir_bounce = normalize(g_pos - sample_pos);
         float dot1 = max(0.0, dot(sample_normal, dir_bounce));

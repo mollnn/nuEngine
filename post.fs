@@ -28,8 +28,8 @@ void main() {
     vec3 radiance_ssr = texture(ssr, v_texcoord).xyz;
     vec3 radiance_rsm = vec3(0.0);
     float sw = 0.0;
-    for(int i = -6; i <= 6; i++) {
-        for(int j = -6; j <= 6; j++) {
+    for(int i = -8; i <= 8; i++) {
+        for(int j = -8; j <= 8; j++) {
             float w = 1.0 / (i * i + j * j + 5);    // approximation of gaussian
             radiance_rsm += texture(rsm, v_texcoord + vec2(i, j) / vec2(screen_width, screen_height)).xyz * w;
             sw += w;
