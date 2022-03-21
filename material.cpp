@@ -58,7 +58,6 @@ void Material::loadTexturesAssimp(aiMaterial *mat, const std::string &dir)
 
     loadTexturesAssimpType(aiTextureType_AMBIENT, "texture_ambient", mat, dir);
     loadTexturesAssimpType(aiTextureType_DIFFUSE, "texture_diffuse", mat, dir);
-    loadTexturesAssimpType(aiTextureType_NORMALS, "texture_normals", mat, dir);
     loadTexturesAssimpType(aiTextureType_SPECULAR, "texture_specular", mat, dir);
 }
 

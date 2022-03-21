@@ -3,6 +3,8 @@
 in vec3 v_pos;
 in vec3 v_normal;
 in vec2 v_texcoord;
+in vec3 v_tangent;
+in vec3 v_bitangent;
 in vec4 v_pos4;
 
 layout (location = 0) out vec4 gbuf_posdepth;
@@ -11,6 +13,8 @@ layout (location = 2) out vec4 gbuf_Ka;
 layout (location = 3) out vec4 gbuf_Kd;
 layout (location = 4) out vec4 gbuf_Ks;
 layout (location = 5) out vec4 gbuf_Ns;
+layout (location = 6) out vec4 gbuf_tangent;
+layout (location = 7) out vec4 gbuf_bitangent;
 
 uniform vec3 color_ambient;
 uniform int usetex_ambient;
@@ -52,4 +56,6 @@ void main()
     gbuf_Kd = vec4(Kd, 1.0);
     gbuf_Ks = vec4(Ks, 1.0);
     gbuf_Ns = vec4(Ns,Ns,Ns,Ns);
+    gbuf_tangent = vec4(v_tangent, 1.0);
+    gbuf_bitangent = vec4(v_bitangent, 1.0);
 }

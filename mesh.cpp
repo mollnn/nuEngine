@@ -20,6 +20,12 @@ void Mesh::loadMeshAssimp(aiMesh *mesh, const aiScene *scene, const std::string 
             vertices_.push_back(0);
             vertices_.push_back(0);
         }
+        vertices_.push_back(mesh->mTangents[j].x);
+        vertices_.push_back(mesh->mTangents[j].y);
+        vertices_.push_back(mesh->mTangents[j].z);
+        vertices_.push_back(mesh->mBitangents[j].x);
+        vertices_.push_back(mesh->mBitangents[j].y);
+        vertices_.push_back(mesh->mBitangents[j].z);
     }
 
     for (int i = 0; i < mesh->mNumFaces; i++)
@@ -42,12 +48,16 @@ void Mesh::loadMeshAssimp(aiMesh *mesh, const aiScene *scene, const std::string 
     glBufferData(GL_ARRAY_BUFFER, vertices_.size() * sizeof(GLfloat), vertices_.data(), GL_STATIC_DRAW);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices_.size() * sizeof(GLuint), indices_.data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), 0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(3 * sizeof(GLfloat)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void *)(3 * sizeof(GLfloat)));
     glEnableVertexAttribArray(1);
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (void *)(6 * sizeof(GLfloat)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void *)(6 * sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void *)(8 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(GLfloat), (void *)(11 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(4);
 }
 
 Mesh::Mesh()

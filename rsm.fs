@@ -68,7 +68,7 @@ void main() {
     // RSM 
     vec3 rsm_contribution = vec3(0.0, 0.0, 0.0);
     float sum_weight = 0;
-    const int N_SAMPLE = 32;
+    const int N_SAMPLE = 128;
     vec3 normal = normalize(g_normal);
     for(int i = 0; i < N_SAMPLE; i++) {
         vec3 dir_receiver = normalize(g_pos - point_light[0].pos);
@@ -86,9 +86,9 @@ void main() {
         float chi1 = rnds[i * 4 + 1];
         float chi2 = rnds[i * 4 + 2];
         float chi3 = rnds[i * 4 + 3];
-        chi0 += scrrnd;
-        if(chi0 >= 1)
-            chi0 -= 1;
+        // chi0 += scrrnd;
+        // if(chi0 >= 1)
+        //     chi0 -= 1;
         chi1 += scrrnd;
         if(chi1 >= 1)
             chi1 -= 1;

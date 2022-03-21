@@ -10,6 +10,8 @@ uniform sampler2D gbuf2;
 uniform sampler2D gbuf3;
 uniform sampler2D gbuf4;
 uniform sampler2D gbuf5;
+uniform sampler2D gbuf6;
+uniform sampler2D gbuf7;
 uniform sampler2D ao;
 
 uniform samplerCube shadow_map;
@@ -61,6 +63,8 @@ void main()
     vec3 Kd = texture(gbuf3, v_texcoord).xyz;
     vec3 Ks = texture(gbuf4, v_texcoord).xyz;
     float Ns = texture(gbuf5, v_texcoord).x;
+    vec3 g_tangent = texture(gbuf6, v_texcoord).xyz;
+    vec3 g_bitangent = texture(gbuf7, v_texcoord).xyz;
     
     int scrx = int(v_texcoord.x * 1920);
     int scry = int(v_texcoord.y * 1080);
@@ -69,6 +73,9 @@ void main()
     vec3 color = ambient * Ka * (texture(ao, v_texcoord).r);
     vec3 Ps = g_pos;
     vec3 n = normalize(g_normal);
+    
+    // bump mapping
+    
     for(int i=0;i<n_point_light;i++)
     {
         vec3 Pl = point_light[i].pos;

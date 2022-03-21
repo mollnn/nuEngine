@@ -4,6 +4,8 @@ in vec2 v_texcoord;
 
 out vec4 FragColor;
 
+uniform sampler2D gbuf0;
+uniform sampler2D gbuf1;
 uniform sampler2D lighting;
 uniform sampler2D ssr;
 uniform sampler2D rsm;
@@ -27,10 +29,17 @@ void main() {
     vec3 radiance_lighting = texture(lighting, v_texcoord).xyz;
     vec3 radiance_ssr = texture(ssr, v_texcoord).xyz;
     vec3 radiance_rsm = vec3(0.0);
+    vec3 g0 = texture(gbuf0, v_texcoord).xyz;
+    vec3 g1 = texture(gbuf1, v_texcoord).xyz;
+
+    // Joint Bilateral Filtering
+
     float sw = 0.0;
-    for(int i = -8; i <= 8; i++) {
-        for(int j = -8; j <= 8; j++) {
-            float w = 1.0 / (i * i + j * j + 5);    // approximation of gaussian
+    for(int i = -3; i <= 3; i++) {
+        for(int j = -3; j <= 3; j++) {
+            vec3 tg0 = texture(gbuf0, v_texcoord + vec2(i, j) / vec2(screen_width, screen_height)).xyz;
+            vec3 tg1 = texture(gbuf1, v_texcoord + vec2(i, j) / vec2(screen_width, screen_height)).xyz;
+            float w = exp(-(i * i + j * j) * 0.5 - pow(length(tg0 - g0), 2) - pow(length(tg1 - g1), 2));    // approximation of gaussian
             radiance_rsm += texture(rsm, v_texcoord + vec2(i, j) / vec2(screen_width, screen_height)).xyz * w;
             sw += w;
         }
@@ -41,4 +50,4 @@ void main() {
     vec3 color = pow(radiance, vec3(1.0 / 2.2));
 
     FragColor = vec4(color, 1.0);
-}   
+}

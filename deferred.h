@@ -22,7 +22,7 @@
 
 struct Deferred
 {
-    static const int n_gbuffer = 6;
+    static const int n_gbuffer = 8;
     std::vector<GLfloat> vertices;
     GLuint vao, vbo;
     Shader gbuffer_shader;
