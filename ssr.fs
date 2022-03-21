@@ -58,10 +58,10 @@ vec3 worldToScreen(vec3 w)
 vec3 intersection(vec3 o, vec3 d)
 {
     float s=0.01;
-    float a=0.002;
+    float a=0.01;
     vec3 p=o;
-    float thickness=0.2;
-    for(int i=0;i<64;i++)
+    float thickness=0.3;
+    for(int i=0;i<32;i++)
     {
         p+=d*s;
         s+=a;
@@ -101,8 +101,7 @@ void main()
     int N_SAMPLE = 1;
     for(int i=0;i<N_SAMPLE;i++)
     {
-        vec3 h, f;
-        float pdf;
+        vec3 h, f_pdf;
         if(Ns<1000)
         {
             // glossy
@@ -118,15 +117,13 @@ void main()
             float sin_theta = sqrt(1 - cos_theta);
             float phi = 2.0 * 3.14159 * r2;
             h = cos_theta * n + sin_theta * cos(phi) * ax1 + sin_theta * sin(phi) * ax2;
-            f = (Ns + 2.0) / 8 / 3.14159 * Ks * pow(max(0.0, dot(h, n)), Ns);
-            pdf = (Ns + 2.0) / 8 / 3.14159 * pow(max(0.0, dot(h, n)), Ns + 1);
+            f_pdf = Ks;
         }
         else
         {
             // specular
             h = n;
-            f = Ks;
-            pdf = 1.0;
+            f_pdf = Ks;
         }
         vec3 wi = reflect(-wo, h);
         vec3 hitpos = intersection(p, wi);
@@ -142,8 +139,8 @@ void main()
                 vec3 Wo = normalize(camera_pos-Ps);
                 vec3 h = normalize(Wi + Wo);
                 // vec3 Ld = 1.0 / 3.14159 * Kd * Li * max(0.0, dot(Wi, n)) * (dot(Wo, n) > 0 ? 1.0 : 0.0);
-                vec3 Ls = f * (dot(Wo, n) > 0 ? 1.0 : 0.0) * Li;
-                color += (Ls) / N_SAMPLE / pdf;
+                vec3 Ls = f_pdf * (dot(Wo, n) > 0 ? 1.0 : 0.0) * Li;
+                color += (Ls) / N_SAMPLE;
                 // color = hitpos;
             }
         }

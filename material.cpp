@@ -8,7 +8,6 @@ void Material::loadTexturesAssimpType(aiTextureType type, const std::string &typ
     {
         aiString filename;
         mat->GetTexture(type, i, &filename);
-        std::cout << "fn=" << dir + filename.C_Str() << std::endl;
         std::string full_name = dir + filename.C_Str();
         Texture2D *texture;
         if (texture_pool.find(full_name) == texture_pool.end())
@@ -28,7 +27,6 @@ void Material::loadTexturesAssimpType(aiTextureType type, const std::string &typ
 
 void Material::loadTexturesAssimp(aiMaterial *mat, const std::string &dir)
 {
-    std::cout << "dir=" << dir << std::endl;
     float t;
     if (AI_SUCCESS != mat->Get(AI_MATKEY_SHININESS, t))
         t = 1.0f;

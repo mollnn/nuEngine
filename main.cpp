@@ -64,7 +64,7 @@ int main()
 
     Scene scene;
     scene.add(std::make_shared<Model>("sponza/sponza.obj"), glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
-    scene.add(std::make_shared<PointLight>(glm::vec3(17.0f, 12.0f, 4.0f) * 0.2f, glm::vec3(0.0f, 10.0f, 0.0f), 1.0f));
+    scene.add(std::make_shared<PointLight>(glm::vec3(12.0f, 11.0f, 10.0f) * 20.0f, glm::vec3(0.0f, 12.0f, 0.0f), 5.0f));
     // scene.add(std::make_shared<Model>("mitsuba.obj"));
     // scene.add(std::make_shared<Model>("spot.obj"), glm::translate(glm::mat4(1.0f), glm::vec3(-1.8f, 0.7f, 0.0f)));
     // scene.add(std::make_shared<PointLight>(glm::vec3(500.0f, 500.0f, 500.0f), glm::vec3(-15.0f, 10.0f, 0.0f), 1.0f));
@@ -83,7 +83,7 @@ int main()
 
     Deferred deferred(screen_x, screen_y);
 
-    std::vector<float> rnds;
+    std::vector<GLfloat> rnds;
     std::uniform_real_distribution<GLfloat> random_float(0.0, 1.0);
     std::default_random_engine generator;
     std::vector<float> screen_rnd;

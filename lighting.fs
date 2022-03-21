@@ -55,8 +55,8 @@ float rndUniform(float alpha)
 
 void main()
 {
-    vec3 v_pos = texture(gbuf0, v_texcoord).xyz;
-    vec3 v_normal = texture(gbuf1, v_texcoord).xyz;
+    vec3 g_pos = texture(gbuf0, v_texcoord).xyz;
+    vec3 g_normal = texture(gbuf1, v_texcoord).xyz;
     vec3 Ka = texture(gbuf2, v_texcoord).xyz;
     vec3 Kd = texture(gbuf3, v_texcoord).xyz;
     vec3 Ks = texture(gbuf4, v_texcoord).xyz;
@@ -67,8 +67,8 @@ void main()
     float scrrnd = texture(screen_rnd_tex, v_texcoord).x;
 
     vec3 color = ambient * Ka * (texture(ao, v_texcoord).r);
-    vec3 Ps = v_pos;
-    vec3 n = normalize(v_normal);
+    vec3 Ps = g_pos;
+    vec3 n = normalize(g_normal);
     for(int i=0;i<n_point_light;i++)
     {
         vec3 Pl = point_light[i].pos;
@@ -83,7 +83,7 @@ void main()
         {
             const int N_SAMPLE = 8;
             float shadow_bias = max(0.3 * (1.0 - dot(Wi, n)), 0.03);
-            vec3 d_receiver = (v_pos - point_light[0].pos);
+            vec3 d_receiver = (g_pos - point_light[0].pos);
             float dist_receiver = length(d_receiver);
             vec3 dir_receiver = normalize(d_receiver);
             float dist_blocker = 0.0;
