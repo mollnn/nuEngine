@@ -105,23 +105,23 @@ int main()
     rnd_ubo.setData(4096, rnds.data(), GL_STATIC_DRAW);
     rnd_ubo.use(1);
 
-    Shader ssao_shader("../ssao.vs", "../ssao.fs");
+    Shader ssao_shader("../shaders/ssao.vs", "../shaders/ssao.fs");
     Texture2D ssao_texture(screen_x, screen_y);
     FramebufferObject ssao_fbo({&ssao_texture}, screen_x, screen_y);
 
-    Shader lighting_shader("../lighting.vs", "../lighting.fs");
+    Shader lighting_shader("../shaders/lighting.vs", "../shaders/lighting.fs");
     Texture2D lighting_tex(screen_x, screen_y);
     FramebufferObject lighting_fbo({&lighting_tex}, screen_x, screen_y);
 
-    Shader rsm_shader("../rsm.vs", "../rsm.fs");
+    Shader rsm_shader("../shaders/rsm.vs", "../shaders/rsm.fs");
     Texture2D rsm_tex(screen_x, screen_y);
     FramebufferObject rsm_fbo({&rsm_tex}, screen_x, screen_y);
 
-    Shader ssr_shader("../ssr.vs", "../ssr.fs");
+    Shader ssr_shader("../shaders/ssr.vs", "../shaders/ssr.fs");
     Texture2D ssr_tex(screen_x, screen_y);
     FramebufferObject ssr_fbo({&ssr_tex}, screen_x, screen_y);
 
-    Shader post_shader("../post.vs", "../post.fs");
+    Shader post_shader("../shaders/post.vs", "../shaders/post.fs");
 
     lighting_shader.use();
     lighting_shader.setTexture("screen_rnd_tex", &screen_rnd_tex);

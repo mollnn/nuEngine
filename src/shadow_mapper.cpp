@@ -1,6 +1,6 @@
 #include "shadow_mapper.h"
 
-ShadowMapper::ShadowMapper() : shadow_shader("../shadow.vs", "../shadow.fs"),
+ShadowMapper::ShadowMapper() : shadow_shader("../shaders/shadow.vs", "../shaders/shadow.fs"),
                                depth_texture(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT, GL_FLOAT),
                                pos_texture(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, GL_RGB16F, GL_RGB, GL_FLOAT),
                                normal_texture(SHADOW_MAP_WIDTH, SHADOW_MAP_HEIGHT, GL_RGB16F, GL_RGB, GL_FLOAT),

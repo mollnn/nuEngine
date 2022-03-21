@@ -1,6 +1,6 @@
 #include "deferred.h"
 
-Deferred::Deferred(int width, int height) : width_(width), height_(height), gbuffer_shader("../gbuf.vs", "../gbuf.fs"),
+Deferred::Deferred(int width, int height) : width_(width), height_(height), gbuffer_shader("../shaders/gbuf.vs", "../shaders/gbuf.fs"),
                                             gbuffer_texture{
                                                 {width, height},
                                                 {width, height},

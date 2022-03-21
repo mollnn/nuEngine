@@ -68,7 +68,7 @@ void main() {
     // RSM 
     vec3 rsm_contribution = vec3(0.0, 0.0, 0.0);
     float sum_weight = 0;
-    const int N_SAMPLE = 128;
+    const int N_SAMPLE = 16;
     vec3 normal = normalize(g_normal);
     for(int i = 0; i < N_SAMPLE; i++) {
         vec3 dir_receiver = normalize(g_pos - point_light[0].pos);

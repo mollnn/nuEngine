@@ -4,8 +4,9 @@ set(CMAKE_CXX_STANDARD 17)
 project(nuEngine)
 include_directories(include)
 link_directories(lib)
-file(GLOB project_file glad.c main.cpp pointlight.cpp camera.cpp cameracontrol.cpp shader.cpp texture2d.cpp texture_cube.cpp texture.cpp material.cpp mesh.cpp model.cpp deferred.cpp shadow_mapper.cpp framebuffer_object.cpp profiler.cpp callbacks.cpp object.cpp scenedesc.cpp scene.cpp uniform_buffer.cpp)
-add_executable(${PROJECT_NAME} ${project_file})
+aux_source_directory(${PROJECT_SOURCE_DIR}/src SRCSRC)
+aux_source_directory(${PROJECT_SOURCE_DIR}/ext SRCEXT)
+add_executable(${PROJECT_NAME} ${SRCSRC} ${SRCEXT})
 
 # for windows
 target_link_libraries(${PROJECT_NAME}
