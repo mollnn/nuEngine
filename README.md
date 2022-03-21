@@ -2,7 +2,7 @@
 
 Real-time rendering engine, built on OpenGL 
 
-[![](docs\images\sponza_gi_rsm.jpg)](https://github.com/mollnn/nuEngine/blob/main/docs/images/sponza_gi_rsm.jpg?raw=true)
+![](https://github.com/mollnn/nuEngine/blob/main/docs/images/sponza_gi_rsm.jpg?raw=true)
 
 ## Feature Set
 
